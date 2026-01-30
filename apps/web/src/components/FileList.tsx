@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
-import { File, FileText, FileImage, FileCode, MoreHorizontal } from 'lucide-react';
+import { File, FileText, FileImage, FileCode, MoreHorizontal, FilterX } from 'lucide-react';
 import { useFiles } from '../hooks/useFiles';
 import { cn } from '../lib/utils';
+import { applyFileFilters, type FileFilterState } from './FileFilters';
 
 interface FileListProps {
   folderId: string;
+  filters?: FileFilterState;
+  onClearFilters?: () => void;
 }
 
 function getFileIcon(filename: string) {
@@ -42,7 +45,7 @@ function LoadingSkeleton() {
   );
 }
 
-export function FileList({ folderId }: FileListProps) {
+export function FileList({ folderId, filters, onClearFilters }: FileListProps) {
   const { data: files, isLoading } = useFiles(folderId);
 
   if (!folderId) {
@@ -63,6 +66,27 @@ export function FileList({ folderId }: FileListProps) {
     );
   }
 
+  const filteredFiles = filters ? applyFileFilters(files, filters) : files;
+
+  if (filteredFiles.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+        <FilterX className="h-8 w-8 mb-2 opacity-40" />
+        <p className="text-sm font-medium">No files match your filters</p>
+        {onClearFilters && (
+          <button
+            onClick={onClearFilters}
+            className="mt-2 text-xs text-primary hover:underline"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const displayFiles = filteredFiles;
+
   return (
     <div data-testid="file-list" className="border border-border rounded overflow-hidden">
       <table className="w-full text-sm">
@@ -78,7 +102,7 @@ export function FileList({ folderId }: FileListProps) {
           </tr>
         </thead>
         <tbody>
-          {files.map((file) => {
+          {displayFiles.map((file) => {
             const Icon = getFileIcon(file.name);
             return (
               <tr
