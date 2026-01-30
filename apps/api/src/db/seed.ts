@@ -1,4 +1,5 @@
 import { createDb } from './index';
+import { folderNameToDatasetKind, findMatchingPipeline } from './seed-helpers';
 
 const dbUrl = process.env.DATABASE_URL || './data/datahub.db';
 
@@ -615,15 +616,24 @@ interface PipelineRun {
 
 const pipelineRuns: PipelineRun[] = [];
 
-// Create pipeline runs for some file versions
-const versionsWithRuns = fileVersions.slice(0, 30); // First 30 versions
-
-for (const version of versionsWithRuns) {
+// Create pipeline runs for file versions, matching by folder type to appropriate pipeline
+for (const version of fileVersions) {
   const file = files.find((f) => f.id === version.fileId);
   if (!file) continue;
 
-  // Find a matching pipeline
-  const matchingPipeline = pipelines.find((p) => p.dataRoomId === file.dataRoomId);
+  const folder = folders.find((f) => f.id === file.folderId);
+  if (!folder) continue;
+
+  // Extract data type slug from folder ID (e.g., "liberty-mutual-2024-Q4-premium-bordereaux" -> "premium-bordereaux")
+  const folderIdParts = folder.id.split('-');
+  const dataTypeSlug = folderIdParts.slice(-2).join('-'); // Get last two parts (e.g., "premium-bordereaux")
+
+  // Map folder type to dataset kind
+  const datasetKind = folderNameToDatasetKind(dataTypeSlug);
+  if (!datasetKind) continue;
+
+  // Find pipeline matching both data room and dataset kind
+  const matchingPipeline = findMatchingPipeline(pipelines, file.dataRoomId, datasetKind);
   if (!matchingPipeline) continue;
 
   // Determine status based on randomness
