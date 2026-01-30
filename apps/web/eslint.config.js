@@ -33,6 +33,7 @@ export default [
         HTMLButtonElement: 'readonly',
         HTMLDivElement: 'readonly',
         localStorage: 'readonly',
+        URLSearchParams: 'readonly',
       },
     },
     plugins: {

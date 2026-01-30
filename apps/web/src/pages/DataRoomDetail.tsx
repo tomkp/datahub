@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ChevronRight, FolderPlus } from 'lucide-react';
 import { useDataRoom } from '../hooks/useDataRooms';
 import { useCreateFolder } from '../hooks/useFolders';
@@ -8,15 +8,38 @@ import { FileTree } from '../components/FileTree';
 import { FileList } from '../components/FileList';
 import { FileDropzone } from '../components/FileDropzone';
 import { UploadProgress } from '../components/UploadProgress';
+import { FileFilters, type FileFilterState } from '../components/FileFilters';
 import { useToast } from '../components/ui/Toast';
 
 export function DataRoomDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: dataRoom, isLoading } = useDataRoom(id!);
   const [selectedFolderId, setSelectedFolderId] = useState<string>('');
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
   const { success: showSuccess, error: showError } = useToast();
+
+  // Parse filters from URL
+  const filters: FileFilterState = {
+    fileTypes: searchParams.get('types')?.split(',').filter(Boolean),
+    dateRange: searchParams.get('date') as FileFilterState['dateRange'],
+  };
+
+  const handleFiltersChange = (newFilters: FileFilterState) => {
+    const params = new URLSearchParams();
+    if (newFilters.fileTypes?.length) {
+      params.set('types', newFilters.fileTypes.join(','));
+    }
+    if (newFilters.dateRange) {
+      params.set('date', newFilters.dateRange);
+    }
+    setSearchParams(params);
+  };
+
+  const handleClearFilters = () => {
+    setSearchParams({});
+  };
 
   const createFolderMutation = useCreateFolder();
   const { uploads, uploadFiles, clearCompleted } = useFileUpload(selectedFolderId);
@@ -149,7 +172,7 @@ export function DataRoomDetail() {
         {/* Main content - File list */}
         <div className="flex-1 p-6 overflow-y-auto">
           {selectedFolderId ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Drag and Drop Upload Zone */}
               <FileDropzone
                 onUpload={handleFilesUpload}
@@ -176,8 +199,18 @@ export function DataRoomDetail() {
                 </div>
               )}
 
+              {/* File Filters */}
+              <FileFilters
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+              />
+
               {/* File List */}
-              <FileList folderId={selectedFolderId} />
+              <FileList
+                folderId={selectedFolderId}
+                filters={filters}
+                onClearFilters={handleClearFilters}
+              />
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-muted-foreground">
