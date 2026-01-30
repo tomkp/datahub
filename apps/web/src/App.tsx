@@ -4,6 +4,7 @@ import { Database, LayoutDashboard, GitBranch, Settings } from 'lucide-react';
 import { ApiContext, createApiClient } from './lib/api';
 import { Dashboard, DataRooms, DataRoomDetail, FileDetail } from './pages';
 import { cn } from './lib/utils';
+import { ThemeToggle } from './components/ThemeToggle';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,6 +83,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <NavItem to="/settings" icon={Settings}>
             Settings
           </NavItem>
+          <ThemeToggle />
         </div>
       </aside>
 
