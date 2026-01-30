@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Clock, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import { StatusBadge } from './StatusBadge';
+import { ChevronDown, ChevronRight, AlertCircle, Check, Loader2, Circle } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 type StepStatus = 'pending' | 'processing' | 'processed' | 'errored' | 'warned';
@@ -32,15 +31,6 @@ function formatStepName(step: string): string {
   return STEP_LABELS[step] || step.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function formatTimestamp(timestamp: string): string {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-}
-
 function formatDuration(startedAt: string, completedAt: string): string {
   const start = new Date(startedAt).getTime();
   const end = new Date(completedAt).getTime();
@@ -52,17 +42,31 @@ function formatDuration(startedAt: string, completedAt: string): string {
 }
 
 function StepIcon({ status }: { status: StepStatus }) {
+  const baseClasses = "h-4 w-4 flex items-center justify-center rounded-full";
+
   switch (status) {
     case 'processed':
-      return <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />;
+      return (
+        <div className={cn(baseClasses, "bg-green-500 dark:bg-green-600")}>
+          <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+        </div>
+      );
     case 'processing':
-      return <Loader2 className="h-5 w-5 text-primary animate-spin" />;
+      return <Loader2 className="h-4 w-4 text-primary animate-spin" />;
     case 'errored':
-      return <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+      return (
+        <div className={cn(baseClasses, "bg-red-500 dark:bg-red-600")}>
+          <AlertCircle className="h-2.5 w-2.5 text-white" />
+        </div>
+      );
     case 'warned':
-      return <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
+      return (
+        <div className={cn(baseClasses, "bg-yellow-500 dark:bg-yellow-600")}>
+          <AlertCircle className="h-2.5 w-2.5 text-white" />
+        </div>
+      );
     default:
-      return <div className="h-5 w-5 rounded-full border-2 border-border" />;
+      return <Circle className="h-4 w-4 text-muted-foreground/40" />;
   }
 }
 
@@ -73,45 +77,37 @@ function PipelineStepItem({ step, isLast }: { step: PipelineStep; isLast: boolea
   return (
     <li
       data-status={step.status}
-      className="relative flex gap-4"
+      className="relative flex items-start gap-3"
     >
       {/* Timeline connector */}
       {!isLast && (
-        <div className="absolute left-[10px] top-7 bottom-0 w-0.5 bg-border" />
+        <div className="absolute left-[7px] top-5 bottom-0 w-px bg-border" />
       )}
 
       {/* Step icon */}
-      <div className="relative z-10 flex-shrink-0">
+      <div className="relative z-10 flex-shrink-0 mt-0.5">
         <StepIcon status={step.status} />
       </div>
 
       {/* Step content */}
-      <div className="flex-1 pb-6">
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-medium text-foreground">
+      <div className={cn("flex-1 min-w-0", !isLast && "pb-3")}>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] text-foreground truncate">
             {formatStepName(step.step)}
-          </h3>
-          <StatusBadge status={step.status} size="sm" />
-        </div>
-
-        {/* Timestamps */}
-        <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
-          {step.startedAt && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              Started {formatTimestamp(step.startedAt)}
-            </span>
-          )}
+          </span>
           {step.startedAt && step.completedAt && (
-            <span className="text-foreground font-medium">
+            <span className="text-xs text-muted-foreground tabular-nums shrink-0">
               {formatDuration(step.startedAt, step.completedAt)}
             </span>
+          )}
+          {step.status === 'processing' && (
+            <span className="text-xs text-primary shrink-0">Running...</span>
           )}
         </div>
 
         {/* Error message preview */}
         {step.errorMessage && !isExpanded && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400 truncate">
+          <p className="mt-1 text-xs text-red-600 dark:text-red-400 truncate">
             {step.errorMessage}
           </p>
         )}
@@ -121,28 +117,28 @@ function PipelineStepItem({ step, isLast }: { step: PipelineStep; isLast: boolea
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className={cn(
-              'mt-2 flex items-center gap-1 text-xs text-muted-foreground',
+              'mt-1 flex items-center gap-0.5 text-xs text-muted-foreground',
               'hover:text-foreground transition-colors'
             )}
             aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
           >
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3" />
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3 w-3" />
             )}
-            {isExpanded ? 'Hide details' : 'Show details'}
+            Details
           </button>
         )}
 
         {/* Expanded details */}
         {isExpanded && hasDetails && (
-          <div className="mt-2 p-3 rounded-lg bg-surface-2 text-sm">
+          <div className="mt-2 p-2 rounded bg-surface-2 text-xs">
             {step.errorMessage && (
               <p className="text-red-600 dark:text-red-400">{step.errorMessage}</p>
             )}
             {step.messages && (
-              <pre className="mt-2 text-xs text-muted-foreground overflow-x-auto">
+              <pre className="mt-1 text-[11px] text-muted-foreground overflow-x-auto">
                 {JSON.stringify(step.messages, null, 2)}
               </pre>
             )}
@@ -155,7 +151,7 @@ function PipelineStepItem({ step, isLast }: { step: PipelineStep; isLast: boolea
 
 export function PipelineProgress({ steps }: PipelineProgressProps) {
   return (
-    <ul role="list" className="space-y-0">
+    <ul role="list">
       {steps.map((step, index) => (
         <PipelineStepItem
           key={step.step}
