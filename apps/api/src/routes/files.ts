@@ -1,17 +1,63 @@
 import { Hono } from 'hono';
-import { eq } from 'drizzle-orm';
+import { eq, desc, and, inArray } from 'drizzle-orm';
 import type { AppDatabase } from '../db';
-import { files, fileVersions, folders } from '../db/schema';
+import { files, fileVersions, folders, pipelineRuns } from '../db/schema';
 import { FileStorage } from '../services/storage';
 import { getUser } from '../middleware/auth';
 
 export function filesRoutes(db: AppDatabase, storage: FileStorage) {
   const app = new Hono();
 
-  // List files in folder
+  // List files in folder (with latest version and pipeline status)
   app.get('/folders/:folderId/files', (c) => {
     const folderId = c.req.param('folderId');
-    const result = db.select().from(files).where(eq(files.folderId, folderId)).all();
+    const fileList = db.select().from(files).where(eq(files.folderId, folderId)).all();
+
+    // Get latest version for each file
+    const fileIds = fileList.map((f) => f.id);
+    if (fileIds.length === 0) {
+      return c.json([]);
+    }
+
+    // Get all versions for these files
+    const allVersions = db
+      .select()
+      .from(fileVersions)
+      .where(inArray(fileVersions.fileId, fileIds))
+      .orderBy(desc(fileVersions.uploadedAt))
+      .all();
+
+    // Group versions by fileId and get the latest
+    const latestVersionByFile = new Map<string, typeof allVersions[0]>();
+    for (const version of allVersions) {
+      if (!latestVersionByFile.has(version.fileId)) {
+        latestVersionByFile.set(version.fileId, version);
+      }
+    }
+
+    // Get pipeline runs for latest versions
+    const latestVersionIds = Array.from(latestVersionByFile.values()).map((v) => v.id);
+    const runs = latestVersionIds.length > 0
+      ? db
+          .select()
+          .from(pipelineRuns)
+          .where(inArray(pipelineRuns.fileVersionId, latestVersionIds))
+          .all()
+      : [];
+
+    const runByVersionId = new Map(runs.map((r) => [r.fileVersionId, r]));
+
+    // Combine file data with latest version and pipeline status
+    const result = fileList.map((file) => {
+      const latestVersion = latestVersionByFile.get(file.id);
+      const pipelineRun = latestVersion ? runByVersionId.get(latestVersion.id) : undefined;
+      return {
+        ...file,
+        latestVersion,
+        pipelineStatus: pipelineRun?.status,
+      };
+    });
+
     return c.json(result);
   });
 
@@ -82,7 +128,12 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
       return c.json({ error: 'File not found' }, 404);
     }
 
-    const versions = db.select().from(fileVersions).where(eq(fileVersions.fileId, id)).all();
+    const versions = db
+      .select()
+      .from(fileVersions)
+      .where(eq(fileVersions.fileId, id))
+      .orderBy(desc(fileVersions.uploadedAt))
+      .all();
 
     return c.json({ ...file, versions });
   });
@@ -144,10 +195,15 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
     return c.body(null, 204);
   });
 
-  // List file versions
+  // List file versions (ordered by uploadedAt desc, latest first)
   app.get('/files/:fileId/versions', (c) => {
     const fileId = c.req.param('fileId');
-    const versions = db.select().from(fileVersions).where(eq(fileVersions.fileId, fileId)).all();
+    const versions = db
+      .select()
+      .from(fileVersions)
+      .where(eq(fileVersions.fileId, fileId))
+      .orderBy(desc(fileVersions.uploadedAt))
+      .all();
     return c.json(versions);
   });
 

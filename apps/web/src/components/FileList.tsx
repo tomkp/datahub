@@ -1,10 +1,37 @@
-import { File as FileIcon, FileText, FileImage, FileCode, MoreHorizontal, FilterX } from 'lucide-react';
+import { File as FileIcon, FileText, FileImage, FileCode, MoreHorizontal, FilterX, Check, Loader2, AlertCircle } from 'lucide-react';
 import { useFiles } from '../hooks/useFiles';
 import { type File as FileType } from '../lib/api';
 import { cn } from '../lib/utils';
 import { applyFileFilters, type FileFilterState } from './FileFilters';
 import { FileTypeBadge } from './FileTypeBadge';
 import { QueryError } from './ui';
+
+function PipelineStatusIcon({ status }: { status?: 'processing' | 'processed' | 'errored' }) {
+  if (!status) return null;
+
+  switch (status) {
+    case 'processed':
+      return (
+        <div className="h-4 w-4 rounded-full bg-green-500 flex items-center justify-center" title="Processed">
+          <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+        </div>
+      );
+    case 'processing':
+      return (
+        <span title="Processing">
+          <Loader2 className="h-4 w-4 text-primary animate-spin" />
+        </span>
+      );
+    case 'errored':
+      return (
+        <div className="h-4 w-4 rounded-full bg-red-500 flex items-center justify-center" title="Error">
+          <AlertCircle className="h-2.5 w-2.5 text-white" />
+        </div>
+      );
+    default:
+      return null;
+  }
+}
 
 interface FileListProps {
   folderId: string;
@@ -113,6 +140,9 @@ export function FileList({ folderId, filters, onClearFilters, selectedFileId, on
             <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-20">
               Type
             </th>
+            <th className="text-center text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-16">
+              Status
+            </th>
             <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-28">
               Modified
             </th>
@@ -142,6 +172,11 @@ export function FileList({ folderId, filters, onClearFilters, selectedFileId, on
                 </td>
                 <td className="px-3 py-2">
                   <FileTypeBadge filename={file.name} />
+                </td>
+                <td className="px-3 py-2">
+                  <div className="flex justify-center">
+                    <PipelineStatusIcon status={file.pipelineStatus} />
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">
                   {formatDate(file.updatedAt)}
