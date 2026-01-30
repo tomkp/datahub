@@ -4,6 +4,7 @@ import { ChevronRight, Download, Upload, Clock, User, Link2 } from 'lucide-react
 import { useFile, useFileVersions, useUploadFileVersion } from '../hooks/useFiles';
 import { usePagination } from '../hooks/usePagination';
 import { Pagination } from '../components/ui/Pagination';
+import { QueryError } from '../components/ui';
 import { useToast } from '../components/ui/Toast';
 import { useApi } from '../lib/api';
 
@@ -23,7 +24,7 @@ function formatDate(dateString?: string) {
 
 export function FileDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: file, isLoading } = useFile(id!);
+  const { data: file, isLoading, isError, error, refetch } = useFile(id!);
   const { data: versions } = useFileVersions(id!);
   const {
     paginatedItems: paginatedVersions,
@@ -77,6 +78,18 @@ export function FileDetail() {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <QueryError
+          title="Failed to load file"
+          message={error?.message || 'An unexpected error occurred'}
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }

@@ -9,12 +9,13 @@ import { FileList } from '../components/FileList';
 import { FileDropzone } from '../components/FileDropzone';
 import { UploadProgress } from '../components/UploadProgress';
 import { FileFilters, type FileFilterState } from '../components/FileFilters';
+import { QueryError } from '../components/ui';
 import { useToast } from '../components/ui/Toast';
 
 export function DataRoomDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: dataRoom, isLoading } = useDataRoom(id!);
+  const { data: dataRoom, isLoading, isError, error, refetch } = useDataRoom(id!);
   const [selectedFolderId, setSelectedFolderId] = useState<string>('');
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
@@ -82,6 +83,18 @@ export function DataRoomDetail() {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <QueryError
+          title="Failed to load data room"
+          message={error?.message || 'An unexpected error occurred'}
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }
