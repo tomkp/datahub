@@ -1,3 +1,60 @@
+# User Stories
+
+## Implementation Status
+
+### ✅ Completed
+- [x] Drag and Drop Upload
+- [x] Select Files via Dialog
+- [x] Upload Multiple File Types
+- [x] View Upload Progress
+- [x] View Upload Queue
+- [x] Receive Invalid File Feedback
+- [x] View Breadcrumb Trail
+- [x] Download File
+- [x] Copy File Link
+- [x] Paginate Version History (20 per page)
+- [x] Filter by Status (file type)
+- [x] Filter by Date Range
+- [x] Combine Multiple Filters
+- [x] Persist Filters in URL
+- [x] Clear All Filters
+- [x] View Empty Filter Results
+- [x] Receive Success Notifications
+- [x] Receive Error Notifications
+- [x] Navigate with Keyboard (FileTree)
+- [x] Use with Screen Reader (ARIA labels)
+
+### 🔲 Remaining
+
+**Quick wins:**
+- [ ] View Query Errors - Error handling when data fails to load
+- [ ] View File Type Badges - Dataset kind badges on files
+- [ ] View Status Badges - Color-coded status badges
+- [ ] View Page Title - Show folder name in browser title
+
+**Medium complexity:**
+- [ ] View File Details Panel - Side panel with file metadata
+- [ ] Close File Details - Close the panel
+- [ ] Navigate Between Versions - Keyboard arrows in version history
+- [ ] View What's New Panel
+- [ ] See Unread Changes Badge
+
+**Higher complexity:**
+- [ ] View Tenants
+- [ ] Auto-Select Default Tenant
+- [ ] View Pipeline Progress
+- [ ] View Pipeline Step Status
+- [ ] View Pipeline Step Timestamps
+- [ ] View Pipeline Step Details
+- [ ] Understand Pipeline Failures
+- [ ] View PII Scan Results
+- [ ] View PII Occurrence Samples
+- [ ] Expand PII Type Details
+- [ ] Review PII Findings
+- [ ] Add Review Comments
+- [ ] View PII Unsupported Status
+
+---
 
 ## Tenant & Data Room Navigation
 
