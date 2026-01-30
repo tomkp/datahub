@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ChevronRight, FolderPlus } from 'lucide-react';
 import { useDataRoom } from '../hooks/useDataRooms';
 import { useCreateFolder } from '../hooks/useFolders';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { FileTree } from '../components/FileTree';
 import { FileList } from '../components/FileList';
@@ -20,6 +21,8 @@ export function DataRoomDetail() {
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
   const { success: showSuccess, error: showError } = useToast();
+
+  useDocumentTitle(dataRoom?.name);
 
   // Parse filters from URL
   const filters: FileFilterState = {
