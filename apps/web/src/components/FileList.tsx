@@ -3,6 +3,7 @@ import { File, FileText, FileImage, FileCode, MoreHorizontal, FilterX } from 'lu
 import { useFiles } from '../hooks/useFiles';
 import { cn } from '../lib/utils';
 import { applyFileFilters, type FileFilterState } from './FileFilters';
+import { FileTypeBadge } from './FileTypeBadge';
 import { QueryError } from './ui';
 
 interface FileListProps {
@@ -107,6 +108,9 @@ export function FileList({ folderId, filters, onClearFilters }: FileListProps) {
             <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide">
               Name
             </th>
+            <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-20">
+              Type
+            </th>
             <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-28">
               Modified
             </th>
@@ -132,6 +136,9 @@ export function FileList({ folderId, filters, onClearFilters }: FileListProps) {
                     <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="truncate">{file.name}</span>
                   </Link>
+                </td>
+                <td className="px-3 py-2">
+                  <FileTypeBadge filename={file.name} />
                 </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">
                   {formatDate(file.updatedAt)}
