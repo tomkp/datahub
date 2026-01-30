@@ -27,12 +27,14 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
       .orderBy(desc(fileVersions.uploadedAt))
       .all();
 
-    // Group versions by fileId and get the latest
+    // Group versions by fileId and get the latest + count
     const latestVersionByFile = new Map<string, typeof allVersions[0]>();
+    const versionCountByFile = new Map<string, number>();
     for (const version of allVersions) {
       if (!latestVersionByFile.has(version.fileId)) {
         latestVersionByFile.set(version.fileId, version);
       }
+      versionCountByFile.set(version.fileId, (versionCountByFile.get(version.fileId) || 0) + 1);
     }
 
     // Get pipeline runs for latest versions
@@ -54,6 +56,7 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
       return {
         ...file,
         latestVersion,
+        versionCount: versionCountByFile.get(file.id) || 0,
         pipelineStatus: pipelineRun?.status,
       };
     });

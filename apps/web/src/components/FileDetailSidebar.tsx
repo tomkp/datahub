@@ -11,6 +11,20 @@ interface FileDetailSidebarProps {
   onClose: () => void;
 }
 
+function VersionStatusBadge({ versionId }: { versionId: string }) {
+  const { data: pipelineRun, isLoading } = usePipelineRunByFileVersion(versionId);
+
+  if (isLoading) {
+    return <span className="text-[10px] text-muted-foreground">...</span>;
+  }
+
+  if (!pipelineRun) {
+    return null;
+  }
+
+  return <StatusBadge status={pipelineRun.status} size="sm" />;
+}
+
 function formatDate(dateString?: string) {
   if (!dateString) return '-';
   const date = new Date(dateString);
@@ -205,6 +219,7 @@ export function FileDetailSidebar({ fileId, onClose }: FileDetailSidebarProps) {
                             Latest
                           </span>
                         )}
+                        <VersionStatusBadge versionId={version.id} />
                       </div>
                       <a
                         href={`${api.baseUrl}/api/file-versions/${version.id}/download`}

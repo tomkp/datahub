@@ -13,6 +13,20 @@ import { useApi, type FileVersion } from '../lib/api';
 
 const VERSIONS_PER_PAGE = 20;
 
+function VersionStatusBadge({ versionId }: { versionId: string }) {
+  const { data: pipelineRun, isLoading } = usePipelineRunByFileVersion(versionId);
+
+  if (isLoading) {
+    return <span className="text-xs text-muted-foreground">...</span>;
+  }
+
+  if (!pipelineRun) {
+    return <span className="text-xs text-muted-foreground">-</span>;
+  }
+
+  return <StatusBadge status={pipelineRun.status} size="sm" />;
+}
+
 function formatDate(dateString?: string) {
   if (!dateString) return '-';
   const date = new Date(dateString);
@@ -245,6 +259,9 @@ export function FileDetail() {
                 <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
                   Uploaded By
                 </th>
+                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
+                  Status
+                </th>
                 <th className="w-20" />
               </tr>
             </thead>
@@ -293,6 +310,9 @@ export function FileDetail() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
+                      <VersionStatusBadge versionId={version.id} />
+                    </td>
+                    <td className="px-4 py-3">
                       <a
                         href={`/api/file-versions/${version.id}/download`}
                         className="flex items-center justify-center p-2 rounded hover:bg-muted/50"
@@ -306,7 +326,7 @@ export function FileDetail() {
               })}
               {!versions?.length && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                     No versions found
                   </td>
                 </tr>

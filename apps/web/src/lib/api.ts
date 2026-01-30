@@ -48,6 +48,7 @@ export interface File {
   updatedAt?: string;
   versions?: FileVersion[];
   latestVersion?: FileVersion;
+  versionCount?: number;
   pipelineStatus?: 'processing' | 'processed' | 'errored';
 }
 

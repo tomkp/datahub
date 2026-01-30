@@ -168,6 +168,11 @@ export function FileList({ folderId, filters, onClearFilters, selectedFileId, on
                   <div className="flex items-center gap-2 text-[13px] text-foreground">
                     <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="truncate">{file.name}</span>
+                    {file.versionCount && file.versionCount > 1 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground shrink-0">
+                        v{file.versionCount}
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="px-3 py-2">
