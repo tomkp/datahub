@@ -1,5 +1,5 @@
-import { useRef, useCallback, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useRef, useCallback, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ChevronRight, Download, Upload, Clock, User, Link2, GitBranch } from 'lucide-react';
 import { useFile, useFileVersions, useUploadFileVersion } from '../hooks/useFiles';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -27,6 +27,7 @@ function formatDate(dateString?: string) {
 
 export function FileDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: file, isLoading, isError, error, refetch } = useFile(id!);
   const { data: versions } = useFileVersions(id!);
   const {
@@ -36,8 +37,31 @@ export function FileDetail() {
     totalItems,
     goToPage,
   } = usePagination(versions, VERSIONS_PER_PAGE);
-  const [selectedVersion, setSelectedVersion] = useState<FileVersion | null>(null);
+
+  // Get selected version from URL or default to latest
+  const versionIdFromUrl = searchParams.get('version');
+  const selectedVersion = versions?.find((v) => v.id === versionIdFromUrl);
   const activeVersion = selectedVersion || versions?.[0];
+
+  // Update URL when selecting a version
+  const setSelectedVersion = useCallback(
+    (version: FileVersion | null) => {
+      if (version && versions?.[0]?.id !== version.id) {
+        setSearchParams({ version: version.id }, { replace: true });
+      } else {
+        // Remove version param when selecting latest (default)
+        setSearchParams({}, { replace: true });
+      }
+    },
+    [setSearchParams, versions]
+  );
+
+  // Clear version param if it doesn't match any version
+  useEffect(() => {
+    if (versionIdFromUrl && versions && !versions.find((v) => v.id === versionIdFromUrl)) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [versionIdFromUrl, versions, setSearchParams]);
   const { data: pipelineRun } = usePipelineRunByFileVersion(activeVersion?.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadVersionMutation = useUploadFileVersion();
@@ -66,14 +90,15 @@ export function FileDetail() {
   };
 
   const handleCopyLink = useCallback(async () => {
-    const fileUrl = `${window.location.origin}/files/${id}`;
+    const versionParam = selectedVersion ? `?version=${selectedVersion.id}` : '';
+    const fileUrl = `${window.location.origin}/files/${id}${versionParam}`;
     try {
       await navigator.clipboard.writeText(fileUrl);
       showSuccess('Link copied to clipboard');
     } catch {
       showError('Failed to copy link');
     }
-  }, [id, showSuccess, showError]);
+  }, [id, selectedVersion, showSuccess, showError]);
 
   const handleDownload = useCallback(() => {
     if (!versions?.length) return;

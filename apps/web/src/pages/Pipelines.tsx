@@ -75,25 +75,36 @@ function PipelineCard({ pipeline, dataRoom }: { pipeline: Pipeline; dataRoom: Da
             Recent Runs
           </h4>
           <div className="space-y-2">
-            {recentRuns.map((run) => (
-              <div
+            {recentRuns.map((run) => {
+              const linkTo = run.folderId && run.fileId
+                ? `/data-rooms/${dataRoom.id}?folder=${run.folderId}&file=${run.fileId}`
+                : '#';
+              return (
+              <Link
                 key={run.id}
-                className="flex items-center justify-between text-sm"
+                to={linkTo}
+                className="flex items-center justify-between text-sm hover:bg-muted/50 rounded px-2 py-1 -mx-2 transition-colors duration-150"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <PipelineStatusIcon status={run.status} />
-                  <span className="text-muted-foreground truncate max-w-[150px]">
-                    {run.fileVersionId?.slice(0, 8)}...
+                  <span
+                    className="text-muted-foreground truncate"
+                    title={run.folderName && run.fileName ? `${run.folderName} / ${run.fileName}` : run.fileName || run.fileVersionId}
+                  >
+                    {run.folderName && run.fileName
+                      ? `${run.folderName} / ${run.fileName}`
+                      : run.fileName || run.fileVersionId?.slice(0, 8) + '...'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <StatusBadge status={run.status} size="sm" />
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {formatDate(run.createdAt)}
                   </span>
                 </div>
-              </div>
-            ))}
+              </Link>
+              );
+            })}
           </div>
         </div>
       ) : (

@@ -78,6 +78,10 @@ export interface PipelineRun {
   status: 'processing' | 'processed' | 'errored';
   steps?: string[];
   runSteps?: PipelineRunStep[];
+  fileId?: string;
+  fileName?: string;
+  folderId?: string;
+  folderName?: string;
   createdAt?: string;
   updatedAt?: string;
 }

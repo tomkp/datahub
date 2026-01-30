@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import type { AppDatabase } from '../db';
-import { pipelines, pipelineRuns, pipelineRunSteps } from '../db/schema';
+import { pipelines, pipelineRuns, pipelineRunSteps, fileVersions, files, folders } from '../db/schema';
 import { PIPELINE_STEPS, DATASET_KINDS } from '@datahub/shared';
 
 const createPipelineSchema = z.object({
@@ -94,7 +94,25 @@ export function pipelinesRoutes(db: AppDatabase) {
   app.get('/pipelines/:pipelineId/runs', (c) => {
     const pipelineId = c.req.param('pipelineId');
     const runs = db.select().from(pipelineRuns).where(eq(pipelineRuns.pipelineId, pipelineId)).all();
-    return c.json(runs);
+
+    // Enrich runs with file information
+    const enrichedRuns = runs.map((run) => {
+      const version = db.select().from(fileVersions).where(eq(fileVersions.id, run.fileVersionId)).get();
+      if (version) {
+        const file = db.select().from(files).where(eq(files.id, version.fileId)).get();
+        const folder = file ? db.select().from(folders).where(eq(folders.id, file.folderId)).get() : null;
+        return {
+          ...run,
+          fileId: file?.id,
+          fileName: file?.name,
+          folderId: folder?.id,
+          folderName: folder?.name,
+        };
+      }
+      return run;
+    });
+
+    return c.json(enrichedRuns);
   });
 
   // Get pipeline run by file version ID (with steps)
