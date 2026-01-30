@@ -143,5 +143,31 @@ db.run(`
   VALUES ('default', 'Default Tenant', '${now}', '${now}')
 `);
 
+// Seed data rooms
+const dataRooms = [
+  { id: 'aphex', name: 'APHEX', description: 'Third-party actuarial and asset management services.' },
+  { id: 'factset', name: 'FACTSET', description: 'Investment research, portfolio management, and analytics.' },
+  { id: 'betamax', name: 'BETAMAX', description: 'Betamax Reinsurance Company, Ltd. as a reinsurance cedant.' },
+  { id: 'delorean', name: 'DELOREAN', description: 'Third-party regulatory and financial reporting services.' },
+  { id: 'kodak', name: 'KODAK', description: 'Third-party actuarial modeling & valuation services.' },
+  { id: 'crockett', name: 'CROCKETT', description: 'Crockett as a reinsurance cedant.' },
+  { id: 'tubbs', name: 'TUBBS', description: 'Tubbs Life Assurance as a reinsurance cedant.' },
+  { id: 'internal', name: 'INTERNAL', description: 'Internal file sharing and storage.' },
+];
+
+for (const room of dataRooms) {
+  db.run(`
+    INSERT OR IGNORE INTO data_rooms (id, tenant_id, name, storage_url, description, created_at, updated_at)
+    VALUES ('${room.id}', 'default', '${room.name}', '/storage/${room.id}', '${room.description}', '${now}', '${now}')
+  `);
+
+  // Create a root folder for each data room
+  db.run(`
+    INSERT OR IGNORE INTO folders (id, data_room_id, name, path, created_at, updated_at)
+    VALUES ('${room.id}-root', '${room.id}', 'Root', '/', '${now}', '${now}')
+  `);
+}
+
 console.log('Database initialized successfully!');
+console.log(`Created ${dataRooms.length} data rooms.`);
 close();
