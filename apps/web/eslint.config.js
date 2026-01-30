@@ -34,6 +34,7 @@ export default [
         HTMLDivElement: 'readonly',
         localStorage: 'readonly',
         URLSearchParams: 'readonly',
+        navigator: 'readonly',
       },
     },
     plugins: {

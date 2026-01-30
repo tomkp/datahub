@@ -1,7 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, Download, Upload, Clock, User } from 'lucide-react';
+import { ChevronRight, Download, Upload, Clock, User, Link2 } from 'lucide-react';
 import { useFile, useFileVersions, useUploadFileVersion } from '../hooks/useFiles';
+import { useToast } from '../components/ui/Toast';
+import { useApi } from '../lib/api';
 
 function formatDate(dateString?: string) {
   if (!dateString) return '-';
@@ -21,20 +23,44 @@ export function FileDetail() {
   const { data: versions } = useFileVersions(id!);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadVersionMutation = useUploadFileVersion();
+  const { success: showSuccess, error: showError } = useToast();
+  const api = useApi();
 
   const handleUploadVersion = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length || !id) return;
 
-    await uploadVersionMutation.mutateAsync({
-      fileId: id,
-      file: files[0],
-    });
+    try {
+      await uploadVersionMutation.mutateAsync({
+        fileId: id,
+        file: files[0],
+      });
+      showSuccess('New version uploaded');
+    } catch {
+      showError('Failed to upload version');
+    }
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  const handleCopyLink = useCallback(async () => {
+    const fileUrl = `${window.location.origin}/files/${id}`;
+    try {
+      await navigator.clipboard.writeText(fileUrl);
+      showSuccess('Link copied to clipboard');
+    } catch {
+      showError('Failed to copy link');
+    }
+  }, [id, showSuccess, showError]);
+
+  const handleDownload = useCallback(() => {
+    if (!versions?.length) return;
+    const latestVersion = versions[0];
+    const downloadUrl = `${api.baseUrl}/api/file-versions/${latestVersion.id}/download`;
+    window.open(downloadUrl, '_blank');
+  }, [versions, api.baseUrl]);
 
   if (isLoading) {
     return (
@@ -71,11 +97,28 @@ export function FileDetail() {
           <h1 className="text-2xl font-semibold text-foreground">{file.name}</h1>
           <div className="flex items-center gap-2">
             <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors duration-150 text-sm"
+              title="Copy link to file"
+            >
+              <Link2 className="h-4 w-4" />
+              Copy Link
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={!versions?.length}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/50 disabled:opacity-50 transition-colors duration-150 text-sm"
+              title="Download latest version"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </button>
+            <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors duration-150"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-150 text-sm"
             >
               <Upload className="h-4 w-4" />
-              Upload New Version
+              Upload Version
             </button>
             <input
               ref={fileInputRef}
