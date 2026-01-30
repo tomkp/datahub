@@ -17,10 +17,11 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "hono": "^4.6.0",
+    "@datahub/shared": "workspace:*",
     "@hono/node-server": "^1.13.0",
-    "drizzle-orm": "^0.36.0",
     "better-sqlite3": "^11.6.0",
+    "drizzle-orm": "^0.36.0",
+    "hono": "^4.6.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
