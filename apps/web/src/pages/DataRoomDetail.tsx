@@ -13,7 +13,6 @@ import { FileFilters, type FileFilterState } from '../components/FileFilters';
 import { FileDetailSidebar } from '../components/FileDetailSidebar';
 import { QueryError } from '../components/ui';
 import { useToast } from '../components/ui/Toast';
-import { type File as FileType } from '../lib/api';
 
 export function DataRoomDetail() {
   const { id } = useParams<{ id: string }>();
@@ -21,13 +20,13 @@ export function DataRoomDetail() {
   const { data: dataRoom, isLoading, isError, error, refetch } = useDataRoom(id!);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
-  const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
   const { success: showSuccess, error: showError } = useToast();
 
   useDocumentTitle(dataRoom?.name);
 
-  // Get folder ID from URL
+  // Get folder and file IDs from URL
   const selectedFolderId = searchParams.get('folder') || '';
+  const selectedFileId = searchParams.get('file') || '';
 
   const setSelectedFolderId = useCallback((folderId: string) => {
     setSearchParams((prev) => {
@@ -37,6 +36,24 @@ export function DataRoomDetail() {
       } else {
         params.delete('folder');
       }
+      // Clear file selection when changing folders
+      params.delete('file');
+      return params;
+    });
+  }, [setSearchParams]);
+
+  const handleSelectFile = useCallback((fileId: string) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set('file', fileId);
+      return params;
+    });
+  }, [setSearchParams]);
+
+  const handleCloseFile = useCallback(() => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.delete('file');
       return params;
     });
   }, [setSearchParams]);
@@ -254,8 +271,8 @@ export function DataRoomDetail() {
                 folderId={selectedFolderId}
                 filters={filters}
                 onClearFilters={handleClearFilters}
-                selectedFileId={selectedFile?.id}
-                onSelectFile={setSelectedFile}
+                selectedFileId={selectedFileId}
+                onSelectFile={(file) => handleSelectFile(file.id)}
               />
             </div>
           ) : (
@@ -266,11 +283,11 @@ export function DataRoomDetail() {
         </div>
 
         {/* Right sidebar - File details */}
-        {selectedFile && (
+        {selectedFileId && (
           <div className="w-80 border-l border-border overflow-y-auto">
             <FileDetailSidebar
-              fileId={selectedFile.id}
-              onClose={() => setSelectedFile(null)}
+              fileId={selectedFileId}
+              onClose={handleCloseFile}
             />
           </div>
         )}
