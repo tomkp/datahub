@@ -106,6 +106,8 @@ describe('DataRoomList', () => {
 
     render(<DataRoomList />, { wrapper: createWrapper(api) });
 
-    expect(await screen.findByText(/failed to load/i)).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByText('Failed to load data rooms')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 });

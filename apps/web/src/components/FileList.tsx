@@ -3,6 +3,7 @@ import { File, FileText, FileImage, FileCode, MoreHorizontal, FilterX } from 'lu
 import { useFiles } from '../hooks/useFiles';
 import { cn } from '../lib/utils';
 import { applyFileFilters, type FileFilterState } from './FileFilters';
+import { QueryError } from './ui';
 
 interface FileListProps {
   folderId: string;
@@ -46,7 +47,7 @@ function LoadingSkeleton() {
 }
 
 export function FileList({ folderId, filters, onClearFilters }: FileListProps) {
-  const { data: files, isLoading } = useFiles(folderId);
+  const { data: files, isLoading, isError, error, refetch } = useFiles(folderId);
 
   if (!folderId) {
     return null;
@@ -54,6 +55,17 @@ export function FileList({ folderId, filters, onClearFilters }: FileListProps) {
 
   if (isLoading) {
     return <LoadingSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <QueryError
+        title="Failed to load files"
+        message={error?.message || 'An unexpected error occurred'}
+        onRetry={() => refetch()}
+        size="compact"
+      />
+    );
   }
 
   if (!files?.length) {

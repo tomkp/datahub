@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Database, ChevronRight } from 'lucide-react';
 import { useDataRooms } from '../hooks/useDataRooms';
 import { cn } from '../lib/utils';
+import { QueryError } from './ui';
 
 function LoadingSkeleton() {
   return (
@@ -14,7 +15,7 @@ function LoadingSkeleton() {
 }
 
 export function DataRoomList() {
-  const { data: dataRooms, isLoading, isError, error } = useDataRooms();
+  const { data: dataRooms, isLoading, isError, error, refetch } = useDataRooms();
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -22,9 +23,12 @@ export function DataRoomList() {
 
   if (isError) {
     return (
-      <div className="rounded bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
-        {error?.message || 'Failed to load data rooms'}
-      </div>
+      <QueryError
+        title="Failed to load data rooms"
+        message={error?.message || 'An unexpected error occurred'}
+        onRetry={() => refetch()}
+        size="compact"
+      />
     );
   }
 
