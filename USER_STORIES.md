@@ -30,12 +30,10 @@
 - [x] View File Details Panel - Side panel with file metadata
 - [x] Close File Details - Close the panel
 - [x] Navigate Between Versions - Keyboard arrows in version history
+- [x] View What's New Panel
+- [x] See Unread Changes Badge
 
 ### 🔲 Remaining
-
-**Medium complexity:**
-- [ ] View What's New Panel
-- [ ] See Unread Changes Badge
 
 **Higher complexity:**
 - [ ] View Tenants
