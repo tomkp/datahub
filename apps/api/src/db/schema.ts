@@ -67,9 +67,10 @@ export const fileVersions = sqliteTable('file_versions', {
 export const pipelines = sqliteTable('pipelines', {
   id: text('id').primaryKey(),
   dataRoomId: text('data_room_id').notNull().references(() => dataRooms.id),
-  datasetKind: text('dataset_kind').notNull(),
+  name: text('name').notNull(),
+  datasetKind: text('dataset_kind'),
   steps: text('steps', { mode: 'json' }).$type<string[]>().notNull(),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
+  ...timestamps,
 });
 
 // Pipeline Runs table
@@ -78,19 +79,16 @@ export const pipelineRuns = sqliteTable('pipeline_runs', {
   pipelineId: text('pipeline_id').notNull().references(() => pipelines.id),
   fileVersionId: text('file_version_id').notNull().references(() => fileVersions.id),
   status: text('status').notNull().$type<'processing' | 'processed' | 'errored'>(),
-  steps: text('steps', { mode: 'json' }).$type<string[]>().notNull(),
   ...timestamps,
 });
 
-// Pipeline Run Steps table (composite primary key)
+// Pipeline Run Steps table
 export const pipelineRunSteps = sqliteTable('pipeline_run_steps', {
+  id: text('id').primaryKey(),
   pipelineRunId: text('pipeline_run_id').notNull().references(() => pipelineRuns.id),
   step: text('step').notNull(),
   status: text('status').notNull().$type<'processing' | 'processed' | 'errored' | 'warned'>(),
-  messages: text('messages', { mode: 'json' }),
-  storageUrl: text('storage_url'),
-  startedAt: text('started_at'),
-  completedAt: text('completed_at'),
+  errorMessage: text('error_message'),
   ...timestamps,
 });
 
