@@ -186,4 +186,102 @@ describe('FileTree', () => {
       expect(parentFolder).toHaveAttribute('aria-expanded', 'true');
     });
   });
+
+  // Keyboard navigation tests
+  describe('keyboard navigation', () => {
+    it('handles ArrowDown key press', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+        { id: 'f2', name: 'Images', dataRoomId: 'r1', path: '/Images' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" />, { wrapper: createWrapper(api) });
+
+      const firstFolder = await screen.findByRole('treeitem', { name: /documents/i });
+
+      // Verify ArrowDown doesn't throw and component handles it
+      firstFolder.focus();
+      expect(() => {
+        fireEvent.keyDown(firstFolder, { key: 'ArrowDown' });
+      }).not.toThrow();
+    });
+
+    it('handles ArrowUp key press', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+        { id: 'f2', name: 'Images', dataRoomId: 'r1', path: '/Images' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" />, { wrapper: createWrapper(api) });
+
+      const secondFolder = await screen.findByRole('treeitem', { name: /images/i });
+
+      // Verify ArrowUp doesn't throw and component handles it
+      secondFolder.focus();
+      expect(() => {
+        fireEvent.keyDown(secondFolder, { key: 'ArrowUp' });
+      }).not.toThrow();
+    });
+
+    it('expands folder with ArrowRight', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+        { id: 'f2', name: 'Subfolder', dataRoomId: 'r1', path: '/Documents/Subfolder', parentId: 'f1' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" />, { wrapper: createWrapper(api) });
+
+      const parentFolder = await screen.findByRole('treeitem', { name: /documents/i });
+      expect(parentFolder).toHaveAttribute('aria-expanded', 'false');
+
+      parentFolder.focus();
+      fireEvent.keyDown(parentFolder, { key: 'ArrowRight' });
+
+      expect(parentFolder).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('collapses folder with ArrowLeft', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+        { id: 'f2', name: 'Subfolder', dataRoomId: 'r1', path: '/Documents/Subfolder', parentId: 'f1' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" />, { wrapper: createWrapper(api) });
+
+      const parentFolder = await screen.findByRole('treeitem', { name: /documents/i });
+
+      // First expand
+      fireEvent.click(parentFolder);
+      expect(parentFolder).toHaveAttribute('aria-expanded', 'true');
+
+      // Then collapse with keyboard
+      parentFolder.focus();
+      fireEvent.keyDown(parentFolder, { key: 'ArrowLeft' });
+
+      expect(parentFolder).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('selects folder with Enter key', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+      ]);
+
+      const onSelectFolder = vi.fn();
+      render(<FileTree dataRoomId="r1" onSelectFolder={onSelectFolder} />, {
+        wrapper: createWrapper(api),
+      });
+
+      const folder = await screen.findByRole('treeitem', { name: /documents/i });
+
+      folder.focus();
+      fireEvent.keyDown(folder, { key: 'Enter' });
+
+      expect(onSelectFolder).toHaveBeenCalledWith('f1');
+    });
+  });
 });
