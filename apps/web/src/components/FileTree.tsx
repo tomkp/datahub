@@ -131,10 +131,39 @@ function getVisibleFolders(
   return result;
 }
 
+// Get all ancestor folder IDs for a given folder
+function getAncestorIds(folders: FolderType[], folderId: string): string[] {
+  const ancestors: string[] = [];
+  let currentFolder = folders.find((f) => f.id === folderId);
+
+  while (currentFolder?.parentId) {
+    ancestors.push(currentFolder.parentId);
+    currentFolder = folders.find((f) => f.id === currentFolder!.parentId);
+  }
+
+  return ancestors;
+}
+
 export function FileTree({ dataRoomId, onSelectFolder, selectedFolderId }: FileTreeProps) {
   const { data: folders, isLoading } = useFolders(dataRoomId);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const initialExpandDone = useRef(false);
+
+  // Expand ancestors of selected folder on initial load
+  useEffect(() => {
+    if (folders && selectedFolderId && !initialExpandDone.current) {
+      const ancestors = getAncestorIds(folders, selectedFolderId);
+      if (ancestors.length > 0) {
+        setExpandedFolders((prev) => {
+          const next = new Set(prev);
+          ancestors.forEach((id) => next.add(id));
+          return next;
+        });
+      }
+      initialExpandDone.current = true;
+    }
+  }, [folders, selectedFolderId]);
 
   const toggleExpand = useCallback((folderId: string) => {
     setExpandedFolders((prev) => {

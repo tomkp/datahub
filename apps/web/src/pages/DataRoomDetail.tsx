@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ChevronRight, FolderPlus } from 'lucide-react';
 import { useDataRoom } from '../hooks/useDataRooms';
@@ -17,12 +17,26 @@ export function DataRoomDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: dataRoom, isLoading, isError, error, refetch } = useDataRoom(id!);
-  const [selectedFolderId, setSelectedFolderId] = useState<string>('');
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
   const { success: showSuccess, error: showError } = useToast();
 
   useDocumentTitle(dataRoom?.name);
+
+  // Get folder ID from URL
+  const selectedFolderId = searchParams.get('folder') || '';
+
+  const setSelectedFolderId = useCallback((folderId: string) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (folderId) {
+        params.set('folder', folderId);
+      } else {
+        params.delete('folder');
+      }
+      return params;
+    });
+  }, [setSearchParams]);
 
   // Parse filters from URL
   const filters: FileFilterState = {
@@ -31,18 +45,29 @@ export function DataRoomDetail() {
   };
 
   const handleFiltersChange = (newFilters: FileFilterState) => {
-    const params = new URLSearchParams();
-    if (newFilters.fileTypes?.length) {
-      params.set('types', newFilters.fileTypes.join(','));
-    }
-    if (newFilters.dateRange) {
-      params.set('date', newFilters.dateRange);
-    }
-    setSearchParams(params);
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (newFilters.fileTypes?.length) {
+        params.set('types', newFilters.fileTypes.join(','));
+      } else {
+        params.delete('types');
+      }
+      if (newFilters.dateRange) {
+        params.set('date', newFilters.dateRange);
+      } else {
+        params.delete('date');
+      }
+      return params;
+    });
   };
 
   const handleClearFilters = () => {
-    setSearchParams({});
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.delete('types');
+      params.delete('date');
+      return params;
+    });
   };
 
   const createFolderMutation = useCreateFolder();
