@@ -2,8 +2,12 @@ import { useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, Download, Upload, Clock, User, Link2 } from 'lucide-react';
 import { useFile, useFileVersions, useUploadFileVersion } from '../hooks/useFiles';
+import { usePagination } from '../hooks/usePagination';
+import { Pagination } from '../components/ui/Pagination';
 import { useToast } from '../components/ui/Toast';
 import { useApi } from '../lib/api';
+
+const VERSIONS_PER_PAGE = 20;
 
 function formatDate(dateString?: string) {
   if (!dateString) return '-';
@@ -21,6 +25,13 @@ export function FileDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: file, isLoading } = useFile(id!);
   const { data: versions } = useFileVersions(id!);
+  const {
+    paginatedItems: paginatedVersions,
+    currentPage,
+    totalPages,
+    totalItems,
+    goToPage,
+  } = usePagination(versions, VERSIONS_PER_PAGE);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadVersionMutation = useUploadFileVersion();
   const { success: showSuccess, error: showError } = useToast();
@@ -162,46 +173,52 @@ export function FileDetail() {
               </tr>
             </thead>
             <tbody>
-              {versions?.map((version, index) => (
-                <tr
-                  key={version.id}
-                  className="border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors duration-150"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">
-                        v{versions.length - index}
-                      </span>
-                      {index === 0 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                          Latest
+              {paginatedVersions.map((version, index) => {
+                // Calculate version number: total - ((page-1) * perPage + index)
+                const versionNumber =
+                  totalItems - ((currentPage - 1) * VERSIONS_PER_PAGE + index);
+                const isLatest = currentPage === 1 && index === 0;
+                return (
+                  <tr
+                    key={version.id}
+                    className="border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors duration-150"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">
+                          v{versionNumber}
                         </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      {formatDate(version.uploadedAt)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <User className="h-4 w-4" />
-                      {version.uploadedBy}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <a
-                      href={`/api/file-versions/${version.id}/download`}
-                      className="flex items-center justify-center p-2 rounded hover:bg-muted/50"
-                      title="Download"
-                    >
-                      <Download className="h-4 w-4 text-muted-foreground" />
-                    </a>
-                  </td>
-                </tr>
-              ))}
+                        {isLatest && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            Latest
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        {formatDate(version.uploadedAt)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="h-4 w-4" />
+                        {version.uploadedBy}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <a
+                        href={`/api/file-versions/${version.id}/download`}
+                        className="flex items-center justify-center p-2 rounded hover:bg-muted/50"
+                        title="Download"
+                      >
+                        <Download className="h-4 w-4 text-muted-foreground" />
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
               {!versions?.length && (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
@@ -212,6 +229,13 @@ export function FileDetail() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={VERSIONS_PER_PAGE}
+          onPageChange={goToPage}
+        />
       </div>
     </div>
   );
