@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { AppDatabase } from './db';
 import { authMiddleware, getUser } from './middleware/auth';
+import { FileStorage } from './services/storage';
 import {
   tenantsRoutes,
   usersRoutes,
@@ -18,8 +19,13 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok' });
 });
 
-// Full app factory with DB injection
-export function createApp(db: AppDatabase) {
+export interface AppConfig {
+  db: AppDatabase;
+  storage: FileStorage;
+}
+
+// Full app factory with DB and storage injection
+export function createApp({ db, storage }: AppConfig) {
   const app = new Hono();
 
   // Middleware
@@ -43,7 +49,7 @@ export function createApp(db: AppDatabase) {
   api.route('/users', usersRoutes(db));
   api.route('/data-rooms', dataRoomsRoutes(db));
   api.route('/', foldersRoutes(db));
-  api.route('/', filesRoutes(db));
+  api.route('/', filesRoutes(db, storage));
   api.route('/', pipelinesRoutes(db));
 
   app.route('/api', api);
