@@ -29,6 +29,7 @@ export default [
         React: 'readonly',
         global: 'readonly',
         HTMLInputElement: 'readonly',
+        HTMLButtonElement: 'readonly',
       },
     },
     plugins: {
