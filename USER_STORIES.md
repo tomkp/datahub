@@ -23,14 +23,12 @@
 - [x] Receive Error Notifications
 - [x] Navigate with Keyboard (FileTree)
 - [x] Use with Screen Reader (ARIA labels)
+- [x] View Query Errors - Error handling when data fails to load
+- [x] View File Type Badges - Dataset kind badges on files
+- [x] View Status Badges - Color-coded status badges
+- [x] View Page Title - Show folder name in browser title
 
 ### 🔲 Remaining
-
-**Quick wins:**
-- [ ] View Query Errors - Error handling when data fails to load
-- [ ] View File Type Badges - Dataset kind badges on files
-- [ ] View Status Badges - Color-coded status badges
-- [ ] View Page Title - Show folder name in browser title
 
 **Medium complexity:**
 - [ ] View File Details Panel - Side panel with file metadata
