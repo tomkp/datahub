@@ -67,7 +67,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation - Tighter spacing */}
-        <nav className="flex-1 p-2 space-y-0.5">
+        <nav aria-label="Main navigation" className="flex-1 p-2 space-y-0.5">
           <NavItem to="/" icon={LayoutDashboard}>
             Dashboard
           </NavItem>

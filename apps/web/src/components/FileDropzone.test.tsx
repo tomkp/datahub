@@ -125,4 +125,60 @@ describe('FileDropzone', () => {
     const dropzone = screen.getByTestId('dropzone');
     expect(dropzone).toHaveClass('opacity-50');
   });
+
+  // Accessibility tests
+  describe('accessibility', () => {
+    it('has role="button" for the dropzone', () => {
+      render(<FileDropzone onUpload={vi.fn()} />, { wrapper });
+      const dropzone = screen.getByTestId('dropzone');
+      expect(dropzone).toHaveAttribute('role', 'button');
+    });
+
+    it('has descriptive aria-label', () => {
+      render(<FileDropzone onUpload={vi.fn()} />, { wrapper });
+      const dropzone = screen.getByTestId('dropzone');
+      expect(dropzone).toHaveAttribute('aria-label');
+      expect(dropzone.getAttribute('aria-label')).toContain('file');
+    });
+
+    it('is focusable via tabIndex', () => {
+      render(<FileDropzone onUpload={vi.fn()} />, { wrapper });
+      const dropzone = screen.getByTestId('dropzone');
+      expect(dropzone).toHaveAttribute('tabIndex', '0');
+    });
+
+    it('activates file dialog with Enter key', () => {
+      render(<FileDropzone onUpload={vi.fn()} />, { wrapper });
+      const dropzone = screen.getByTestId('dropzone');
+      const input = screen.getByTestId('file-input');
+
+      const clickSpy = vi.spyOn(input, 'click');
+      fireEvent.keyDown(dropzone, { key: 'Enter' });
+
+      expect(clickSpy).toHaveBeenCalled();
+    });
+
+    it('activates file dialog with Space key', () => {
+      render(<FileDropzone onUpload={vi.fn()} />, { wrapper });
+      const dropzone = screen.getByTestId('dropzone');
+      const input = screen.getByTestId('file-input');
+
+      const clickSpy = vi.spyOn(input, 'click');
+      fireEvent.keyDown(dropzone, { key: ' ' });
+
+      expect(clickSpy).toHaveBeenCalled();
+    });
+
+    it('has aria-disabled when disabled', () => {
+      render(<FileDropzone onUpload={vi.fn()} disabled />, { wrapper });
+      const dropzone = screen.getByTestId('dropzone');
+      expect(dropzone).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    it('has negative tabIndex when disabled', () => {
+      render(<FileDropzone onUpload={vi.fn()} disabled />, { wrapper });
+      const dropzone = screen.getByTestId('dropzone');
+      expect(dropzone).toHaveAttribute('tabIndex', '-1');
+    });
+  });
 });
