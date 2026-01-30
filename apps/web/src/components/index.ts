@@ -5,5 +5,6 @@ export * from './FileList';
 export * from './FileTypeBadge';
 export * from './PageHeader';
 export * from './StatusBadge';
+export * from './TenantSelector';
 export * from './ThemeToggle';
 export * from './WhatsNew';
