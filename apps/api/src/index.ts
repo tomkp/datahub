@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { createApp } from './app';
 import { createDb } from './db';
+import { FileStorage } from './services/storage';
 
 const port = parseInt(process.env.PORT || '3001', 10);
 if (isNaN(port) || port <= 0) {
@@ -9,10 +10,14 @@ if (isNaN(port) || port <= 0) {
 }
 
 const dbUrl = process.env.DATABASE_URL || './data/datahub.db';
+const storagePath = process.env.STORAGE_PATH || './data/uploads';
+
 console.log(`Connecting to database at ${dbUrl}...`);
+console.log(`Using storage path: ${storagePath}`);
 
 const { db, close } = createDb(dbUrl);
-const app = createApp(db);
+const storage = new FileStorage(storagePath);
+const app = createApp({ db, storage });
 
 console.log(`Starting server on port ${port}...`);
 
