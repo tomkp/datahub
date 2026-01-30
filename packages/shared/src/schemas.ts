@@ -26,9 +26,15 @@ export const PIPELINE_RUN_STEP_STATUS = [
 
 export const DATASET_KINDS = [
   'file_sharing',
-  'pgim_ppa_investment_data',
-  'plaz_myga',
-  'pica_ssa_stat',
+  'premium_bordereau',
+  'claims_bordereau',
+  'loss_run',
+  'exposure_data',
+  'treaty_statement',
+  'cat_model_output',
+  'financial_statement',
+  'reserve_analysis',
+  'valuation_data',
 ] as const;
 
 // Zod enums
