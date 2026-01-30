@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, Download, Upload, Clock, User, Link2 } from 'lucide-react';
 import { useFile, useFileVersions, useUploadFileVersion } from '../hooks/useFiles';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { usePagination } from '../hooks/usePagination';
 import { Pagination } from '../components/ui/Pagination';
 import { QueryError } from '../components/ui';
@@ -37,6 +38,8 @@ export function FileDetail() {
   const uploadVersionMutation = useUploadFileVersion();
   const { success: showSuccess, error: showError } = useToast();
   const api = useApi();
+
+  useDocumentTitle(file?.name);
 
   const handleUploadVersion = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
