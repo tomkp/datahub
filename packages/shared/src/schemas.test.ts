@@ -75,6 +75,50 @@ describe('Schemas', () => {
     });
   });
 
+  describe('folderSchema', () => {
+    it('validates a valid folder', () => {
+      const folder = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        dataRoomId: '123e4567-e89b-12d3-a456-426614174001',
+        parentId: null,
+        name: 'Documents',
+        path: 'documents',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      expect(() => folderSchema.parse(folder)).not.toThrow();
+    });
+  });
+
+  describe('fileSchema', () => {
+    it('validates a valid file', () => {
+      const file = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        dataRoomId: '123e4567-e89b-12d3-a456-426614174001',
+        folderId: '123e4567-e89b-12d3-a456-426614174002',
+        name: 'report.pdf',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      expect(() => fileSchema.parse(file)).not.toThrow();
+    });
+  });
+
+  describe('fileVersionSchema', () => {
+    it('validates a valid file version', () => {
+      const fileVersion = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        fileId: '123e4567-e89b-12d3-a456-426614174001',
+        storageUrl: '/data/uploads/room1/file1/v1/report.pdf',
+        uploadedBy: '123e4567-e89b-12d3-a456-426614174002',
+        uploadedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      expect(() => fileVersionSchema.parse(fileVersion)).not.toThrow();
+    });
+  });
+
   describe('pipelineSchema', () => {
     it('validates a pipeline with valid steps', () => {
       const pipeline = {
