@@ -116,4 +116,74 @@ describe('FileTree', () => {
 
     expect(await screen.findByText(/no folders/i)).toBeInTheDocument();
   });
+
+  // Accessibility tests
+  describe('accessibility', () => {
+    it('has role="tree" on the container', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" />, { wrapper: createWrapper(api) });
+
+      await screen.findByText('Documents');
+      const tree = screen.getByRole('tree');
+      expect(tree).toBeInTheDocument();
+    });
+
+    it('has role="treeitem" on folder buttons', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" />, { wrapper: createWrapper(api) });
+
+      const treeitem = await screen.findByRole('treeitem', { name: /documents/i });
+      expect(treeitem).toBeInTheDocument();
+    });
+
+    it('has aria-selected on selected folder', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" selectedFolderId="f1" />, {
+        wrapper: createWrapper(api),
+      });
+
+      const treeitem = await screen.findByRole('treeitem', { name: /documents/i });
+      expect(treeitem).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('has aria-expanded on folders with children', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+        { id: 'f2', name: 'Subfolder', dataRoomId: 'r1', path: '/Documents/Subfolder', parentId: 'f1' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" />, { wrapper: createWrapper(api) });
+
+      const parentFolder = await screen.findByRole('treeitem', { name: /documents/i });
+      expect(parentFolder).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('updates aria-expanded when folder is expanded', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'f1', name: 'Documents', dataRoomId: 'r1', path: '/Documents' },
+        { id: 'f2', name: 'Subfolder', dataRoomId: 'r1', path: '/Documents/Subfolder', parentId: 'f1' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" />, { wrapper: createWrapper(api) });
+
+      const parentFolder = await screen.findByRole('treeitem', { name: /documents/i });
+      fireEvent.click(parentFolder);
+
+      expect(parentFolder).toHaveAttribute('aria-expanded', 'true');
+    });
+  });
 });
