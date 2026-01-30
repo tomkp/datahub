@@ -1,4 +1,5 @@
 export * from './DataRoomList';
+export * from './FileDetailsPanel';
 export * from './FileTree';
 export * from './FileList';
 export * from './FileTypeBadge';
