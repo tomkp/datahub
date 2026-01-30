@@ -6,12 +6,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Linear-inspired color palette
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        surface: {
+          1: 'hsl(var(--surface-1))',
+          2: 'hsl(var(--surface-2))',
+          3: 'hsl(var(--surface-3))',
+        },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',
+          subtle: 'hsl(var(--muted-foreground-subtle))',
         },
         accent: {
           DEFAULT: 'hsl(var(--accent))',
@@ -19,6 +24,7 @@ const config: Config = {
         },
         primary: {
           DEFAULT: 'hsl(var(--primary))',
+          hover: 'hsl(var(--primary-hover))',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -29,7 +35,10 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
-        border: 'hsl(var(--border))',
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          muted: 'hsl(var(--border-muted))',
+        },
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
       },
@@ -41,6 +50,32 @@ const config: Config = {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+      },
+      fontSize: {
+        xs: ['11px', { lineHeight: '16px' }],
+        sm: ['12px', { lineHeight: '18px' }],
+        base: ['13px', { lineHeight: '20px' }],
+        lg: ['14px', { lineHeight: '20px' }],
+        xl: ['16px', { lineHeight: '24px' }],
+        '2xl': ['18px', { lineHeight: '26px' }],
+      },
+      transitionDuration: {
+        '75': '75ms',
+        '100': '100ms',
+      },
+      animation: {
+        'fade-in': 'fadeIn 150ms ease-out',
+        'slide-up': 'slideUp 150ms ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
     },
   },
