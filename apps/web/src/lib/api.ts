@@ -70,6 +70,8 @@ export interface PipelineRun {
 }
 
 export interface ApiClient {
+  baseUrl: string;
+  token: string;
   tenants: {
     list: () => Promise<Tenant[]>;
     get: (id: string) => Promise<Tenant>;
@@ -169,6 +171,8 @@ export function createApiClient(baseUrl: string, token: string): ApiClient {
   };
 
   return {
+    baseUrl,
+    token,
     tenants: {
       list: () => get<Tenant[]>('/api/tenants'),
       get: (id) => get<Tenant>(`/api/tenants/${id}`),

@@ -1,11 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, Upload, FolderPlus } from 'lucide-react';
+import { ChevronRight, FolderPlus } from 'lucide-react';
 import { useDataRoom } from '../hooks/useDataRooms';
 import { useCreateFolder } from '../hooks/useFolders';
-import { useUploadFile } from '../hooks/useFiles';
+import { useFileUpload } from '../hooks/useFileUpload';
 import { FileTree } from '../components/FileTree';
 import { FileList } from '../components/FileList';
+import { FileDropzone } from '../components/FileDropzone';
+import { UploadProgress } from '../components/UploadProgress';
+import { useToast } from '../components/ui/Toast';
 
 export function DataRoomDetail() {
   const { id } = useParams<{ id: string }>();
@@ -13,40 +16,42 @@ export function DataRoomDetail() {
   const [selectedFolderId, setSelectedFolderId] = useState<string>('');
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { success: showSuccess, error: showError } = useToast();
 
   const createFolderMutation = useCreateFolder();
-  const uploadFileMutation = useUploadFile();
+  const { uploads, uploadFiles, clearCompleted } = useFileUpload(selectedFolderId);
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!folderName.trim() || !id) return;
 
-    await createFolderMutation.mutateAsync({
-      dataRoomId: id,
-      data: {
-        name: folderName.trim(),
-        parentId: selectedFolderId || undefined,
-      },
-    });
-
-    setFolderName('');
-    setShowCreateFolder(false);
+    try {
+      await createFolderMutation.mutateAsync({
+        dataRoomId: id,
+        data: {
+          name: folderName.trim(),
+          parentId: selectedFolderId || undefined,
+        },
+      });
+      showSuccess(`Folder "${folderName.trim()}" created`);
+      setFolderName('');
+      setShowCreateFolder(false);
+    } catch {
+      showError('Failed to create folder');
+    }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files?.length || !selectedFolderId) return;
-
-    for (const file of files) {
-      await uploadFileMutation.mutateAsync({
-        folderId: selectedFolderId,
-        file,
-      });
+  const handleFilesUpload = async (files: File[]) => {
+    if (!selectedFolderId) {
+      showError('Please select a folder first');
+      return;
     }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    await uploadFiles(files);
+    const completedCount = files.length;
+    if (completedCount > 0) {
+      showSuccess(
+        `${completedCount} file${completedCount > 1 ? 's' : ''} uploaded`
+      );
     }
   };
 
@@ -78,7 +83,9 @@ export function DataRoomDetail() {
           <span className="text-foreground">{dataRoom.name}</span>
         </div>
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-foreground">{dataRoom.name}</h1>
+          <h1 className="text-xl font-semibold text-foreground">
+            {dataRoom.name}
+          </h1>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCreateFolder(true)}
@@ -87,21 +94,6 @@ export function DataRoomDetail() {
               <FolderPlus className="h-4 w-4" />
               New Folder
             </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={!selectedFolderId}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 text-sm transition-colors duration-150"
-            >
-              <Upload className="h-4 w-4" />
-              Upload
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              onChange={handleFileUpload}
-              className="hidden"
-            />
           </div>
         </div>
       </div>
@@ -157,7 +149,36 @@ export function DataRoomDetail() {
         {/* Main content - File list */}
         <div className="flex-1 p-6 overflow-y-auto">
           {selectedFolderId ? (
-            <FileList folderId={selectedFolderId} />
+            <div className="space-y-6">
+              {/* Drag and Drop Upload Zone */}
+              <FileDropzone
+                onUpload={handleFilesUpload}
+                disabled={!selectedFolderId}
+              />
+
+              {/* Upload Progress */}
+              {uploads.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">
+                      Uploads
+                    </span>
+                    {uploads.some((u) => u.status === 'completed') && (
+                      <button
+                        onClick={clearCompleted}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Clear completed
+                      </button>
+                    )}
+                  </div>
+                  <UploadProgress uploads={uploads} />
+                </div>
+              )}
+
+              {/* File List */}
+              <FileList folderId={selectedFolderId} />
+            </div>
           ) : (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               Select a folder to view files

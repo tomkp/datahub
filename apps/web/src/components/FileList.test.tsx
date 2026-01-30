@@ -6,6 +6,8 @@ import { ApiContext, type ApiClient } from '../lib/api';
 import { FileList } from './FileList';
 
 const createMockApi = (): ApiClient => ({
+  baseUrl: 'http://localhost:3001',
+  token: 'test-token',
   tenants: {
     list: vi.fn(),
     get: vi.fn(),

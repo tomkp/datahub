@@ -6,6 +6,8 @@ import { useDataRooms, useDataRoom, useCreateDataRoom } from './useDataRooms';
 import { ApiContext, type ApiClient } from '../lib/api';
 
 const createMockApi = (overrides: Partial<ApiClient> = {}): ApiClient => ({
+  baseUrl: 'http://localhost:3001',
+  token: 'test-token',
   tenants: {
     list: vi.fn(),
     get: vi.fn(),
