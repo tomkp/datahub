@@ -3,6 +3,7 @@ export * from './FileDetailsPanel';
 export * from './FileTree';
 export * from './FileList';
 export * from './FileTypeBadge';
+export * from './PipelineProgress';
 export * from './PageHeader';
 export * from './StatusBadge';
 export * from './TenantSelector';

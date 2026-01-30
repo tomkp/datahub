@@ -32,17 +32,17 @@
 - [x] Navigate Between Versions - Keyboard arrows in version history
 - [x] View What's New Panel
 - [x] See Unread Changes Badge
+- [x] View Tenants
+- [x] Auto-Select Default Tenant
+- [x] View Pipeline Progress - Step-by-step pipeline visualization
+- [x] View Pipeline Step Status - Status badges for each step
+- [x] View Pipeline Step Timestamps - Start time and duration display
+- [x] View Pipeline Step Details - Expandable details section
+- [x] Understand Pipeline Failures - Error messages in expandable details
 
 ### 🔲 Remaining
 
 **Higher complexity:**
-- [ ] View Tenants
-- [ ] Auto-Select Default Tenant
-- [ ] View Pipeline Progress
-- [ ] View Pipeline Step Status
-- [ ] View Pipeline Step Timestamps
-- [ ] View Pipeline Step Details
-- [ ] Understand Pipeline Failures
 - [ ] View PII Scan Results
 - [ ] View PII Occurrence Samples
 - [ ] Expand PII Type Details
