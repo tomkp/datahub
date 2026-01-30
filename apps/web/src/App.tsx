@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Database, LayoutDashboard, GitBranch, Settings } from 'lucide-react';
 import { ApiContext, createApiClient } from './lib/api';
-import { Dashboard, DataRooms, DataRoomDetail, FileDetail } from './pages';
+import { Dashboard, DataRooms, DataRoomDetail, FileDetail, Pipelines } from './pages';
 import { cn } from './lib/utils';
 import { ThemeToggle } from './components/ThemeToggle';
 import { ToastProvider } from './components/ui/Toast';
@@ -120,17 +120,6 @@ export function App() {
 }
 
 // Placeholder pages
-function Pipelines() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-foreground">Pipelines</h1>
-      <p className="text-sm text-muted-foreground">
-        Pipeline management coming soon...
-      </p>
-    </div>
-  );
-}
-
 function SettingsPage() {
   return (
     <div className="space-y-4">

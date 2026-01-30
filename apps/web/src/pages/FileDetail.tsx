@@ -1,13 +1,15 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, Download, Upload, Clock, User, Link2 } from 'lucide-react';
+import { ChevronRight, Download, Upload, Clock, User, Link2, GitBranch } from 'lucide-react';
 import { useFile, useFileVersions, useUploadFileVersion } from '../hooks/useFiles';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { usePagination } from '../hooks/usePagination';
+import { usePipelineRunByFileVersion } from '../hooks/usePipelines';
 import { Pagination } from '../components/ui/Pagination';
 import { QueryError } from '../components/ui';
+import { PipelineProgress, StatusBadge } from '../components';
 import { useToast } from '../components/ui/Toast';
-import { useApi } from '../lib/api';
+import { useApi, type FileVersion } from '../lib/api';
 
 const VERSIONS_PER_PAGE = 20;
 
@@ -34,6 +36,9 @@ export function FileDetail() {
     totalItems,
     goToPage,
   } = usePagination(versions, VERSIONS_PER_PAGE);
+  const [selectedVersion, setSelectedVersion] = useState<FileVersion | null>(null);
+  const activeVersion = selectedVersion || versions?.[0];
+  const { data: pipelineRun } = usePipelineRunByFileVersion(activeVersion?.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadVersionMutation = useUploadFileVersion();
   const { success: showSuccess, error: showError } = useToast();
@@ -169,6 +174,36 @@ export function FileDetail() {
         </div>
       </div>
 
+      {/* Pipeline Progress */}
+      {activeVersion && (
+        <div className="rounded-lg border border-border p-4 bg-card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <GitBranch className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-medium text-foreground">Pipeline Status</h2>
+            </div>
+            {pipelineRun && (
+              <StatusBadge status={pipelineRun.status} />
+            )}
+          </div>
+          {pipelineRun?.runSteps ? (
+            <PipelineProgress
+              steps={pipelineRun.runSteps.map((step) => ({
+                step: step.step,
+                status: step.status,
+                startedAt: step.createdAt,
+                completedAt: step.status === 'processed' || step.status === 'errored' ? step.updatedAt : undefined,
+                errorMessage: step.errorMessage,
+              }))}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No pipeline run for this version
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Version history */}
       <div>
         <h2 className="text-lg font-medium text-foreground mb-4">Version History</h2>
@@ -194,10 +229,14 @@ export function FileDetail() {
                 const versionNumber =
                   totalItems - ((currentPage - 1) * VERSIONS_PER_PAGE + index);
                 const isLatest = currentPage === 1 && index === 0;
+                const isSelected = activeVersion?.id === version.id;
                 return (
                   <tr
                     key={version.id}
-                    className="border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors duration-150"
+                    onClick={() => setSelectedVersion(version)}
+                    className={`border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors duration-150 cursor-pointer ${
+                      isSelected ? 'bg-primary/5 hover:bg-primary/10' : ''
+                    }`}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -207,6 +246,11 @@ export function FileDetail() {
                         {isLatest && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                             Latest
+                          </span>
+                        )}
+                        {isSelected && !isLatest && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground">
+                            Selected
                           </span>
                         )}
                       </div>

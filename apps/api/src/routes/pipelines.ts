@@ -97,6 +97,20 @@ export function pipelinesRoutes(db: AppDatabase) {
     return c.json(runs);
   });
 
+  // Get pipeline run by file version ID (with steps)
+  app.get('/file-versions/:versionId/pipeline-run', (c) => {
+    const versionId = c.req.param('versionId');
+    const run = db.select().from(pipelineRuns).where(eq(pipelineRuns.fileVersionId, versionId)).get();
+
+    if (!run) {
+      return c.json(null);
+    }
+
+    const steps = db.select().from(pipelineRunSteps).where(eq(pipelineRunSteps.pipelineRunId, run.id)).all();
+
+    return c.json({ ...run, runSteps: steps });
+  });
+
   // Get pipeline run by ID (with steps)
   app.get('/pipeline-runs/:id', (c) => {
     const id = c.req.param('id');

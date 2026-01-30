@@ -105,3 +105,13 @@ export function useRetryPipelineRun() {
     },
   });
 }
+
+export function usePipelineRunByFileVersion(fileVersionId: string | undefined) {
+  const api = useApi();
+
+  return useQuery({
+    queryKey: ['pipelineRun', 'fileVersion', fileVersionId],
+    queryFn: () => api.pipelineRuns.getByFileVersion(fileVersionId!),
+    enabled: !!fileVersionId,
+  });
+}

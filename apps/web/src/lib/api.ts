@@ -60,11 +60,23 @@ export interface Pipeline {
   updatedAt?: string;
 }
 
+export interface PipelineRunStep {
+  id: string;
+  pipelineRunId: string;
+  step: string;
+  status: 'pending' | 'processing' | 'processed' | 'errored' | 'warned';
+  errorMessage?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface PipelineRun {
   id: string;
   pipelineId: string;
   fileVersionId: string;
   status: 'processing' | 'processed' | 'errored';
+  steps?: string[];
+  runSteps?: PipelineRunStep[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -111,6 +123,7 @@ export interface ApiClient {
   };
   pipelineRuns: {
     get: (id: string) => Promise<PipelineRun>;
+    getByFileVersion: (fileVersionId: string) => Promise<PipelineRun | null>;
     create: (data: { pipelineId: string; fileVersionId: string }) => Promise<PipelineRun>;
     retry: (id: string) => Promise<PipelineRun>;
   };
@@ -212,6 +225,7 @@ export function createApiClient(baseUrl: string, token: string): ApiClient {
     },
     pipelineRuns: {
       get: (id) => get<PipelineRun>(`/api/pipeline-runs/${id}`),
+      getByFileVersion: (fileVersionId) => get<PipelineRun | null>(`/api/file-versions/${fileVersionId}/pipeline-run`),
       create: (data) => post<PipelineRun>('/api/pipeline-runs', data),
       retry: (id) => post<PipelineRun>(`/api/pipeline-runs/${id}/retry`, {}),
     },

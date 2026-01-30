@@ -47,6 +47,7 @@ const createMockApi = (overrides: Partial<ApiClient> = {}): ApiClient => ({
   },
   pipelineRuns: {
     get: vi.fn(),
+    getByFileVersion: vi.fn(),
     create: vi.fn(),
     retry: vi.fn(),
   },
