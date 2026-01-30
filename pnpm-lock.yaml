@@ -14,6 +14,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@datahub/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@hono/node-server':
         specifier: ^1.13.0
         version: 1.19.9(hono@4.11.7)

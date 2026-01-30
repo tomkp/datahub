@@ -1,0 +1,114 @@
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { eq } from 'drizzle-orm';
+import type { AppDatabase } from '../db';
+import { dataRooms } from '../db/schema';
+
+const createDataRoomSchema = z.object({
+  tenantId: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  publicUrl: z.string().optional(),
+  featureFlags: z.record(z.boolean()).optional(),
+});
+
+const updateDataRoomSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  publicUrl: z.string().optional(),
+  featureFlags: z.record(z.boolean()).optional(),
+});
+
+export function dataRoomsRoutes(db: AppDatabase) {
+  const app = new Hono();
+
+  // List data rooms (optionally filtered by tenantId)
+  app.get('/', (c) => {
+    const tenantId = c.req.query('tenantId');
+
+    if (tenantId) {
+      const result = db.select().from(dataRooms).where(eq(dataRooms.tenantId, tenantId)).all();
+      return c.json(result);
+    }
+
+    const result = db.select().from(dataRooms).all();
+    return c.json(result);
+  });
+
+  // Create data room
+  app.post('/', async (c) => {
+    const body = await c.req.json();
+    const parsed = createDataRoomSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return c.json({ error: 'Invalid input', details: parsed.error.issues }, 400);
+    }
+
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const storageUrl = `/data/uploads/${id}`;
+
+    const dataRoom = {
+      id,
+      tenantId: parsed.data.tenantId,
+      name: parsed.data.name,
+      storageUrl,
+      publicUrl: parsed.data.publicUrl,
+      description: parsed.data.description,
+      featureFlags: parsed.data.featureFlags,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    db.insert(dataRooms).values(dataRoom).run();
+
+    return c.json(dataRoom, 201);
+  });
+
+  // Get data room by ID
+  app.get('/:id', (c) => {
+    const id = c.req.param('id');
+    const dataRoom = db.select().from(dataRooms).where(eq(dataRooms.id, id)).get();
+
+    if (!dataRoom) {
+      return c.json({ error: 'Data room not found' }, 404);
+    }
+
+    return c.json(dataRoom);
+  });
+
+  // Update data room
+  app.patch('/:id', async (c) => {
+    const id = c.req.param('id');
+    const body = await c.req.json();
+    const parsed = updateDataRoomSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return c.json({ error: 'Invalid input', details: parsed.error.issues }, 400);
+    }
+
+    const existing = db.select().from(dataRooms).where(eq(dataRooms.id, id)).get();
+    if (!existing) {
+      return c.json({ error: 'Data room not found' }, 404);
+    }
+
+    const updated = {
+      ...existing,
+      ...parsed.data,
+      updatedAt: new Date().toISOString(),
+    };
+
+    db.update(dataRooms).set(updated).where(eq(dataRooms.id, id)).run();
+
+    return c.json(updated);
+  });
+
+  // Delete data room
+  app.delete('/:id', (c) => {
+    const id = c.req.param('id');
+    db.delete(dataRooms).where(eq(dataRooms.id, id)).run();
+    return c.body(null, 204);
+  });
+
+  return app;
+}
