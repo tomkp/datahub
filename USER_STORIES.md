@@ -27,13 +27,13 @@
 - [x] View File Type Badges - Dataset kind badges on files
 - [x] View Status Badges - Color-coded status badges
 - [x] View Page Title - Show folder name in browser title
+- [x] View File Details Panel - Side panel with file metadata
+- [x] Close File Details - Close the panel
+- [x] Navigate Between Versions - Keyboard arrows in version history
 
 ### 🔲 Remaining
 
 **Medium complexity:**
-- [ ] View File Details Panel - Side panel with file metadata
-- [ ] Close File Details - Close the panel
-- [ ] Navigate Between Versions - Keyboard arrows in version history
 - [ ] View What's New Panel
 - [ ] See Unread Changes Badge
 

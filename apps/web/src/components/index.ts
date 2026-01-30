@@ -6,3 +6,4 @@ export * from './FileTypeBadge';
 export * from './PageHeader';
 export * from './StatusBadge';
 export * from './ThemeToggle';
+export * from './WhatsNew';
