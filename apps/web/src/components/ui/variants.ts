@@ -8,6 +8,8 @@ export const buttonVariants = cva(
         primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
         secondary: 'bg-surface-2 text-foreground hover:bg-surface-3',
         ghost: 'text-muted-foreground hover:text-foreground hover:bg-surface-2',
+        success:
+          'bg-green-500/10 text-green-600 hover:bg-green-500/20 dark:text-green-400',
         danger:
           'bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400',
       },

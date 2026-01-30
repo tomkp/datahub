@@ -5,6 +5,8 @@ export * from './FileList';
 export * from './FileTypeBadge';
 export * from './PipelineProgress';
 export * from './PageHeader';
+export * from './PIIReviewPanel';
+export * from './PIIScanResults';
 export * from './StatusBadge';
 export * from './TenantSelector';
 export * from './ThemeToggle';
