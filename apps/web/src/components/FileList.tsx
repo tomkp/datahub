@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import { File, FileText, FileImage, FileCode, MoreHorizontal, FilterX } from 'lucide-react';
+import { File as FileIcon, FileText, FileImage, FileCode, MoreHorizontal, FilterX } from 'lucide-react';
 import { useFiles } from '../hooks/useFiles';
+import { type File as FileType } from '../lib/api';
 import { cn } from '../lib/utils';
 import { applyFileFilters, type FileFilterState } from './FileFilters';
 import { FileTypeBadge } from './FileTypeBadge';
@@ -10,6 +10,8 @@ interface FileListProps {
   folderId: string;
   filters?: FileFilterState;
   onClearFilters?: () => void;
+  selectedFileId?: string;
+  onSelectFile?: (file: FileType) => void;
 }
 
 function getFileIcon(filename: string) {
@@ -24,7 +26,7 @@ function getFileIcon(filename: string) {
   if (['txt', 'md', 'pdf', 'doc', 'docx'].includes(ext || '')) {
     return FileText;
   }
-  return File;
+  return FileIcon;
 }
 
 function formatDate(dateString?: string) {
@@ -47,7 +49,7 @@ function LoadingSkeleton() {
   );
 }
 
-export function FileList({ folderId, filters, onClearFilters }: FileListProps) {
+export function FileList({ folderId, filters, onClearFilters, selectedFileId, onSelectFile }: FileListProps) {
   const { data: files, isLoading, isError, error, refetch } = useFiles(folderId);
 
   if (!folderId) {
@@ -72,7 +74,7 @@ export function FileList({ folderId, filters, onClearFilters }: FileListProps) {
   if (!files?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-        <File className="h-8 w-8 mb-2 opacity-40" />
+        <FileIcon className="h-8 w-8 mb-2 opacity-40" />
         <p className="text-sm font-medium">No files</p>
         <p className="text-xs">Upload files to this folder to get started</p>
       </div>
@@ -120,22 +122,23 @@ export function FileList({ folderId, filters, onClearFilters }: FileListProps) {
         <tbody>
           {displayFiles.map((file) => {
             const Icon = getFileIcon(file.name);
+            const isSelected = selectedFileId === file.id;
             return (
               <tr
                 key={file.id}
+                onClick={() => onSelectFile?.(file)}
                 className={cn(
                   'border-b border-border last:border-b-0',
-                  'hover:bg-surface-2 transition-colors duration-75'
+                  'hover:bg-surface-2 transition-colors duration-75',
+                  onSelectFile && 'cursor-pointer',
+                  isSelected && 'bg-primary/5 hover:bg-primary/10'
                 )}
               >
                 <td className="px-3 py-2">
-                  <Link
-                    to={`/files/${file.id}`}
-                    className="flex items-center gap-2 text-[13px] text-foreground hover:text-primary transition-colors"
-                  >
+                  <div className="flex items-center gap-2 text-[13px] text-foreground">
                     <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="truncate">{file.name}</span>
-                  </Link>
+                  </div>
                 </td>
                 <td className="px-3 py-2">
                   <FileTypeBadge filename={file.name} />

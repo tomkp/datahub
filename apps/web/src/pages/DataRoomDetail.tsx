@@ -10,8 +10,10 @@ import { FileList } from '../components/FileList';
 import { FileDropzone } from '../components/FileDropzone';
 import { UploadProgress } from '../components/UploadProgress';
 import { FileFilters, type FileFilterState } from '../components/FileFilters';
+import { FileDetailSidebar } from '../components/FileDetailSidebar';
 import { QueryError } from '../components/ui';
 import { useToast } from '../components/ui/Toast';
+import { type File as FileType } from '../lib/api';
 
 export function DataRoomDetail() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +21,7 @@ export function DataRoomDetail() {
   const { data: dataRoom, isLoading, isError, error, refetch } = useDataRoom(id!);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folderName, setFolderName] = useState('');
+  const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
   const { success: showSuccess, error: showError } = useToast();
 
   useDocumentTitle(dataRoom?.name);
@@ -251,6 +254,8 @@ export function DataRoomDetail() {
                 folderId={selectedFolderId}
                 filters={filters}
                 onClearFilters={handleClearFilters}
+                selectedFileId={selectedFile?.id}
+                onSelectFile={setSelectedFile}
               />
             </div>
           ) : (
@@ -259,6 +264,16 @@ export function DataRoomDetail() {
             </div>
           )}
         </div>
+
+        {/* Right sidebar - File details */}
+        {selectedFile && (
+          <div className="w-80 border-l border-border overflow-y-auto">
+            <FileDetailSidebar
+              fileId={selectedFile.id}
+              onClose={() => setSelectedFile(null)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
