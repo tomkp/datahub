@@ -5,6 +5,7 @@ import { ApiContext, createApiClient } from './lib/api';
 import { Dashboard, DataRooms, DataRoomDetail, FileDetail } from './pages';
 import { cn } from './lib/utils';
 import { ThemeToggle } from './components/ThemeToggle';
+import { ToastProvider } from './components/ui/Toast';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -99,18 +100,20 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ApiContext.Provider value={apiClient}>
-        <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/data-rooms" element={<DataRooms />} />
-              <Route path="/data-rooms/:id" element={<DataRoomDetail />} />
-              <Route path="/files/:id" element={<FileDetail />} />
-              <Route path="/pipelines" element={<Pipelines />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </Layout>
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/data-rooms" element={<DataRooms />} />
+                <Route path="/data-rooms/:id" element={<DataRoomDetail />} />
+                <Route path="/files/:id" element={<FileDetail />} />
+                <Route path="/pipelines" element={<Pipelines />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Routes>
+            </Layout>
+          </BrowserRouter>
+        </ToastProvider>
       </ApiContext.Provider>
     </QueryClientProvider>
   );
