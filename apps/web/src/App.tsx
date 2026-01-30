@@ -34,15 +34,15 @@ function NavItem({
       to={to}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
+          'flex items-center gap-2 px-2 py-1.5 rounded text-[13px] font-medium transition-colors duration-75',
           isActive
             ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+            : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground'
         )
       }
     >
-      <Icon className="h-4 w-4" />
-      {children}
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="truncate">{children}</span>
     </NavLink>
   );
 }
@@ -50,15 +50,22 @@ function NavItem({
 function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-background text-foreground">
-      {/* Sidebar */}
-      <aside className="w-60 border-r border-border bg-muted/30 flex flex-col">
-        <div className="p-4 border-b border-border">
-          <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Database className="h-5 w-5 text-primary" />
-            DataHub
-          </h1>
+      {/* Sidebar - Compact, Linear-style */}
+      <aside className="w-52 border-r border-border bg-surface-1 flex flex-col">
+        {/* Logo area - minimal padding */}
+        <div className="px-3 py-2.5 border-b border-border">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded bg-primary/10 flex items-center justify-center">
+              <Database className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">
+              DataHub
+            </span>
+          </div>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+
+        {/* Navigation - Tighter spacing */}
+        <nav className="flex-1 p-2 space-y-0.5">
           <NavItem to="/" icon={LayoutDashboard}>
             Dashboard
           </NavItem>
@@ -69,16 +76,18 @@ function Layout({ children }: { children: React.ReactNode }) {
             Pipelines
           </NavItem>
         </nav>
-        <div className="p-3 border-t border-border">
+
+        {/* Footer section */}
+        <div className="p-2 border-t border-border space-y-0.5">
           <NavItem to="/settings" icon={Settings}>
             Settings
           </NavItem>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto p-6">{children}</div>
+      {/* Main content - Reduced padding */}
+      <main className="flex-1 overflow-hidden bg-background">
+        <div className="h-full overflow-y-auto p-4">{children}</div>
       </main>
     </div>
   );
@@ -108,18 +117,20 @@ export function App() {
 // Placeholder pages
 function Pipelines() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-foreground">Pipelines</h1>
-      <p className="text-muted-foreground">Pipeline management coming soon...</p>
+    <div className="space-y-4">
+      <h1 className="text-lg font-semibold text-foreground">Pipelines</h1>
+      <p className="text-sm text-muted-foreground">
+        Pipeline management coming soon...
+      </p>
     </div>
   );
 }
 
 function SettingsPage() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
-      <p className="text-muted-foreground">Settings coming soon...</p>
+    <div className="space-y-4">
+      <h1 className="text-lg font-semibold text-foreground">Settings</h1>
+      <p className="text-sm text-muted-foreground">Settings coming soon...</p>
     </div>
   );
 }
