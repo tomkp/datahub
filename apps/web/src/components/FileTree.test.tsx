@@ -285,4 +285,105 @@ describe('FileTree', () => {
       expect(onSelectFolder).toHaveBeenCalledWith('f1');
     });
   });
+
+  // Auto-expanding ancestor folders tests
+  describe('auto-expanding ancestors', () => {
+    it('auto-expands ancestor folders when selectedFolderId is provided on initial render', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'root', name: 'Root', dataRoomId: 'r1', path: '/Root' },
+        { id: 'parent', name: 'Parent', dataRoomId: 'r1', path: '/Root/Parent', parentId: 'root' },
+        { id: 'child', name: 'Child', dataRoomId: 'r1', path: '/Root/Parent/Child', parentId: 'parent' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" selectedFolderId="child" />, {
+        wrapper: createWrapper(api),
+      });
+
+      // Wait for component to render and expand ancestors
+      const rootFolder = await screen.findByRole('treeitem', { name: /^root$/i });
+      const parentFolder = await screen.findByRole('treeitem', { name: /^parent$/i });
+      const childFolder = await screen.findByRole('treeitem', { name: /^child$/i });
+
+      // Both root and parent should be expanded to show the selected child
+      expect(rootFolder).toHaveAttribute('aria-expanded', 'true');
+      expect(parentFolder).toHaveAttribute('aria-expanded', 'true');
+
+      // Child folder should be visible and selected
+      expect(childFolder).toBeVisible();
+      expect(childFolder).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('expands multiple levels of ancestors', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'level1', name: 'Level 1', dataRoomId: 'r1', path: '/Level1' },
+        { id: 'level2', name: 'Level 2', dataRoomId: 'r1', path: '/Level1/Level2', parentId: 'level1' },
+        { id: 'level3', name: 'Level 3', dataRoomId: 'r1', path: '/Level1/Level2/Level3', parentId: 'level2' },
+        { id: 'level4', name: 'Level 4', dataRoomId: 'r1', path: '/Level1/Level2/Level3/Level4', parentId: 'level3' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" selectedFolderId="level4" />, {
+        wrapper: createWrapper(api),
+      });
+
+      // All ancestor folders should be expanded
+      const level1 = await screen.findByRole('treeitem', { name: /^level 1$/i });
+      const level2 = await screen.findByRole('treeitem', { name: /^level 2$/i });
+      const level3 = await screen.findByRole('treeitem', { name: /^level 3$/i });
+      const level4 = await screen.findByRole('treeitem', { name: /^level 4$/i });
+
+      expect(level1).toHaveAttribute('aria-expanded', 'true');
+      expect(level2).toHaveAttribute('aria-expanded', 'true');
+      expect(level3).toHaveAttribute('aria-expanded', 'true');
+      expect(level4).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('does not expand folders when selectedFolderId is a root folder', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'root1', name: 'Root 1', dataRoomId: 'r1', path: '/Root1' },
+        { id: 'root2', name: 'Root 2', dataRoomId: 'r1', path: '/Root2' },
+        { id: 'child', name: 'Child', dataRoomId: 'r1', path: '/Root2/Child', parentId: 'root2' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" selectedFolderId="root1" />, {
+        wrapper: createWrapper(api),
+      });
+
+      const root1 = await screen.findByRole('treeitem', { name: /^root 1$/i });
+      const root2 = await screen.findByRole('treeitem', { name: /^root 2$/i });
+
+      // Root folders should not be expanded (no ancestors to expand)
+      expect(root1).toHaveAttribute('aria-selected', 'true');
+      expect(root1).not.toHaveAttribute('aria-expanded');
+      expect(root2).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('only expands ancestors of the selected folder, not siblings', async () => {
+      const api = createMockApi();
+      api.dataRooms.getFolders = vi.fn().mockResolvedValue([
+        { id: 'parent', name: 'Parent', dataRoomId: 'r1', path: '/Parent' },
+        { id: 'child1', name: 'Child 1', dataRoomId: 'r1', path: '/Parent/Child1', parentId: 'parent' },
+        { id: 'child2', name: 'Child 2', dataRoomId: 'r1', path: '/Parent/Child2', parentId: 'parent' },
+        { id: 'grandchild', name: 'Grandchild', dataRoomId: 'r1', path: '/Parent/Child1/Grandchild', parentId: 'child1' },
+        { id: 'grandchild2', name: 'Grandchild 2', dataRoomId: 'r1', path: '/Parent/Child2/Grandchild2', parentId: 'child2' },
+      ]);
+
+      render(<FileTree dataRoomId="r1" selectedFolderId="grandchild" />, {
+        wrapper: createWrapper(api),
+      });
+
+      const parent = await screen.findByRole('treeitem', { name: /^parent$/i });
+      const child1 = await screen.findByRole('treeitem', { name: /^child 1$/i });
+      const child2 = await screen.findByRole('treeitem', { name: /^child 2$/i });
+
+      // Parent and child1 should be expanded (ancestors of grandchild)
+      expect(parent).toHaveAttribute('aria-expanded', 'true');
+      expect(child1).toHaveAttribute('aria-expanded', 'true');
+
+      // child2 is a sibling with children but should not be auto-expanded
+      expect(child2).toHaveAttribute('aria-expanded', 'false');
+    });
+  });
 });
