@@ -3,9 +3,11 @@ import {
   useContext,
   useState,
   useCallback,
+  useRef,
+  useEffect,
   type ReactNode,
 } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
+import { cva } from 'class-variance-authority';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 const toastVariants = cva(
@@ -14,10 +16,10 @@ const toastVariants = cva(
     variants: {
       type: {
         success:
-          'bg-success bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400',
+          'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400',
         error:
-          'bg-error bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400',
-        info: 'bg-info bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400',
+          'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400',
+        info: 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400',
       },
     },
     defaultVariants: {
@@ -26,7 +28,7 @@ const toastVariants = cva(
   }
 );
 
-export interface ToastProps extends VariantProps<typeof toastVariants> {
+export interface ToastProps {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info';
@@ -40,7 +42,7 @@ const icons = {
 };
 
 export function Toast({ id, message, type, onDismiss }: ToastProps) {
-  const Icon = icons[type ?? 'info'];
+  const Icon = icons[type];
 
   return (
     <div
@@ -71,6 +73,9 @@ interface ToastContextValue {
   toasts: ToastData[];
   addToast: (toast: Omit<ToastData, 'id'>) => void;
   removeToast: (id: string) => void;
+  success: (message: string) => void;
+  error: (message: string) => void;
+  info: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -78,34 +83,73 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 interface ToastProviderProps {
   children: ReactNode;
   autoHideDuration?: number;
+  maxToasts?: number;
 }
+
+const MAX_TOASTS_DEFAULT = 5;
 
 export function ToastProvider({
   children,
   autoHideDuration = 5000,
+  maxToasts = MAX_TOASTS_DEFAULT,
 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastData[]>([]);
+  const timeoutsRef = useRef<Map<string, number>>(new Map());
 
   const removeToast = useCallback((id: string) => {
+    const timeoutId = timeoutsRef.current.get(id);
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+      timeoutsRef.current.delete(id);
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   const addToast = useCallback(
     (toast: Omit<ToastData, 'id'>) => {
       const id = crypto.randomUUID();
-      setToasts((prev) => [...prev, { ...toast, id }]);
+      setToasts((prev) => {
+        const newToasts = [...prev, { ...toast, id }];
+        return newToasts.slice(-maxToasts);
+      });
 
       if (autoHideDuration > 0) {
-        window.setTimeout(() => {
+        const timeoutId = window.setTimeout(() => {
           removeToast(id);
         }, autoHideDuration);
+        timeoutsRef.current.set(id, timeoutId);
       }
     },
-    [autoHideDuration, removeToast]
+    [autoHideDuration, removeToast, maxToasts]
   );
 
+  const success = useCallback(
+    (message: string) => addToast({ type: 'success', message }),
+    [addToast]
+  );
+
+  const error = useCallback(
+    (message: string) => addToast({ type: 'error', message }),
+    [addToast]
+  );
+
+  const info = useCallback(
+    (message: string) => addToast({ type: 'info', message }),
+    [addToast]
+  );
+
+  useEffect(() => {
+    const timeouts = timeoutsRef.current;
+    return () => {
+      timeouts.forEach((id) => window.clearTimeout(id));
+      timeouts.clear();
+    };
+  }, []);
+
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+    <ToastContext.Provider
+      value={{ toasts, addToast, removeToast, success, error, info }}
+    >
       {children}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map((toast) => (

@@ -4,7 +4,7 @@ import { Toast, ToastProvider, useToast } from './Toast';
 
 // Test component to access the hook
 function TestComponent() {
-  const { addToast, toasts } = useToast();
+  const { addToast, success, error, info, toasts } = useToast();
   return (
     <div>
       <button onClick={() => addToast({ type: 'success', message: 'Success!' })}>
@@ -16,6 +16,9 @@ function TestComponent() {
       <button onClick={() => addToast({ type: 'info', message: 'Info!' })}>
         Add Info
       </button>
+      <button onClick={() => success('Quick success!')}>Quick Success</button>
+      <button onClick={() => error('Quick error!')}>Quick Error</button>
+      <button onClick={() => info('Quick info!')}>Quick Info</button>
       <div data-testid="toast-count">{toasts.length}</div>
     </div>
   );
@@ -32,7 +35,7 @@ describe('Toast', () => {
       />
     );
     expect(screen.getByText('Operation successful')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveClass('bg-success');
+    expect(screen.getByRole('alert')).toHaveClass('bg-green-500/10');
   });
 
   it('renders error toast with correct styling', () => {
@@ -45,7 +48,7 @@ describe('Toast', () => {
       />
     );
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveClass('bg-error');
+    expect(screen.getByRole('alert')).toHaveClass('bg-red-500/10');
   });
 
   it('renders info toast with correct styling', () => {
@@ -58,18 +61,13 @@ describe('Toast', () => {
       />
     );
     expect(screen.getByText('FYI information')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveClass('bg-info');
+    expect(screen.getByRole('alert')).toHaveClass('bg-blue-500/10');
   });
 
   it('calls onDismiss when close button is clicked', () => {
     const onDismiss = vi.fn();
     render(
-      <Toast
-        id="4"
-        type="success"
-        message="Test"
-        onDismiss={onDismiss}
-      />
+      <Toast id="4" type="success" message="Test" onDismiss={onDismiss} />
     );
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
     expect(onDismiss).toHaveBeenCalledWith('4');
@@ -77,12 +75,7 @@ describe('Toast', () => {
 
   it('has accessible ARIA attributes', () => {
     render(
-      <Toast
-        id="5"
-        type="error"
-        message="Error message"
-        onDismiss={() => {}}
-      />
+      <Toast id="5" type="error" message="Error message" onDismiss={() => {}} />
     );
     const alert = screen.getByRole('alert');
     expect(alert).toHaveAttribute('aria-live', 'assertive');
@@ -191,12 +184,82 @@ describe('ToastProvider', () => {
   });
 
   it('throws error when useToast is used outside provider', () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
 
     expect(() => render(<TestComponent />)).toThrow(
       'useToast must be used within a ToastProvider'
     );
 
     consoleError.mockRestore();
+  });
+
+  it('limits toasts to maxToasts', () => {
+    render(
+      <ToastProvider maxToasts={2} autoHideDuration={0}>
+        <TestComponent />
+      </ToastProvider>
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByText('Add Success'));
+      fireEvent.click(screen.getByText('Add Error'));
+      fireEvent.click(screen.getByText('Add Info'));
+    });
+
+    // Should only have 2 toasts (error and info, success was dropped)
+    expect(screen.getByTestId('toast-count')).toHaveTextContent('2');
+    expect(screen.queryByText('Success!')).not.toBeInTheDocument();
+    expect(screen.getByText('Error!')).toBeInTheDocument();
+    expect(screen.getByText('Info!')).toBeInTheDocument();
+  });
+
+  it('provides convenience methods for adding toasts', () => {
+    render(
+      <ToastProvider autoHideDuration={0}>
+        <TestComponent />
+      </ToastProvider>
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByText('Quick Success'));
+    });
+    expect(screen.getByText('Quick success!')).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByText('Quick Error'));
+    });
+    expect(screen.getByText('Quick error!')).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByText('Quick Info'));
+    });
+    expect(screen.getByText('Quick info!')).toBeInTheDocument();
+  });
+
+  it('clears timeout when toast is manually dismissed before auto-hide', () => {
+    render(
+      <ToastProvider autoHideDuration={5000}>
+        <TestComponent />
+      </ToastProvider>
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByText('Add Success'));
+    });
+
+    // Manually dismiss before timeout
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
+    });
+
+    // Advance past original timeout - should not cause issues
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(screen.queryByText('Success!')).not.toBeInTheDocument();
+    expect(screen.getByTestId('toast-count')).toHaveTextContent('0');
   });
 });
