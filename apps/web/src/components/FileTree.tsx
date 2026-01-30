@@ -40,25 +40,25 @@ function FolderItem({
       <button
         onClick={handleClick}
         className={cn(
-          'flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm',
-          'hover:bg-muted/50 transition-colors duration-150',
+          'flex items-center gap-1.5 w-full px-2 py-1 rounded text-[13px]',
+          'hover:bg-surface-2 transition-colors duration-75',
           isSelected && 'bg-primary/10 text-primary'
         )}
-        style={{ paddingLeft: `${level * 16 + 8}px` }}
+        style={{ paddingLeft: `${level * 12 + 8}px` }}
       >
         {hasChildren ? (
           isExpanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
           )
         ) : (
-          <span className="w-4 shrink-0" />
+          <span className="w-3 shrink-0" />
         )}
         {isExpanded ? (
-          <FolderOpen className="h-4 w-4 text-primary shrink-0" />
+          <FolderOpen className="h-3.5 w-3.5 text-primary shrink-0" />
         ) : (
-          <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         )}
         <span className="truncate">{folder.name}</span>
       </button>
@@ -85,12 +85,9 @@ export function FileTree({ dataRoomId, onSelectFolder, selectedFolderId }: FileT
 
   if (isLoading) {
     return (
-      <div data-testid="folder-loading" className="space-y-2 p-2">
+      <div data-testid="folder-loading" className="space-y-1 p-2">
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-8 rounded-md bg-muted/50 animate-pulse"
-          />
+          <div key={i} className="h-7 rounded bg-surface-2 animate-pulse" />
         ))}
       </div>
     );
@@ -98,8 +95,8 @@ export function FileTree({ dataRoomId, onSelectFolder, selectedFolderId }: FileT
 
   if (!folders?.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
-        <Folder className="h-8 w-8 mb-2 opacity-50" />
+      <div className="flex flex-col items-center justify-center py-6 text-muted-foreground text-xs">
+        <Folder className="h-6 w-6 mb-1.5 opacity-40" />
         <p>No folders</p>
       </div>
     );
@@ -109,7 +106,7 @@ export function FileTree({ dataRoomId, onSelectFolder, selectedFolderId }: FileT
   const rootFolders = folders.filter((f) => !f.parentId);
 
   return (
-    <div className="py-2">
+    <div className="py-1">
       {rootFolders.map((folder) => (
         <FolderItem
           key={folder.id}

@@ -34,12 +34,9 @@ function formatDate(dateString?: string) {
 
 function LoadingSkeleton() {
   return (
-    <div data-testid="file-loading" className="space-y-2">
+    <div data-testid="file-loading" className="space-y-1">
       {[1, 2, 3, 4].map((i) => (
-        <div
-          key={i}
-          className="h-12 rounded-lg bg-muted/50 animate-pulse"
-        />
+        <div key={i} className="h-9 rounded bg-surface-2 animate-pulse" />
       ))}
     </div>
   );
@@ -58,26 +55,26 @@ export function FileList({ folderId }: FileListProps) {
 
   if (!files?.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <File className="h-12 w-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">No files</p>
-        <p className="text-sm">Upload files to this folder to get started</p>
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+        <File className="h-8 w-8 mb-2 opacity-40" />
+        <p className="text-sm font-medium">No files</p>
+        <p className="text-xs">Upload files to this folder to get started</p>
       </div>
     );
   }
 
   return (
-    <div data-testid="file-list" className="border border-border rounded-lg overflow-hidden">
-      <table className="w-full">
+    <div data-testid="file-list" className="border border-border rounded overflow-hidden">
+      <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border bg-muted/30">
-            <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
+          <tr className="bg-surface-1 border-b border-border">
+            <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide">
               Name
             </th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 w-32">
+            <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-28">
               Modified
             </th>
-            <th className="w-10" />
+            <th className="w-8" />
           </tr>
         </thead>
         <tbody>
@@ -88,24 +85,24 @@ export function FileList({ folderId }: FileListProps) {
                 key={file.id}
                 className={cn(
                   'border-b border-border last:border-b-0',
-                  'hover:bg-muted/30 transition-colors duration-150'
+                  'hover:bg-surface-2 transition-colors duration-75'
                 )}
               >
-                <td className="px-4 py-3">
+                <td className="px-3 py-2">
                   <Link
                     to={`/files/${file.id}`}
-                    className="flex items-center gap-3 text-sm font-medium text-foreground hover:text-primary"
+                    className="flex items-center gap-2 text-[13px] text-foreground hover:text-primary transition-colors"
                   >
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    {file.name}
+                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="truncate">{file.name}</span>
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">
+                <td className="px-3 py-2 text-xs text-muted-foreground">
                   {formatDate(file.updatedAt)}
                 </td>
-                <td className="px-2 py-3">
-                  <button className="p-1 rounded hover:bg-muted/50">
-                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                <td className="px-2 py-2">
+                  <button className="p-1 rounded hover:bg-surface-3 transition-colors duration-75">
+                    <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 </td>
               </tr>

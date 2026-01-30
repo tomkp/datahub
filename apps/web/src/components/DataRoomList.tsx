@@ -5,12 +5,9 @@ import { cn } from '../lib/utils';
 
 function LoadingSkeleton() {
   return (
-    <div data-testid="loading-skeleton" className="space-y-3">
+    <div data-testid="loading-skeleton" className="space-y-1">
       {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="h-16 rounded-lg bg-muted/50 animate-pulse"
-        />
+        <div key={i} className="h-9 rounded bg-surface-2 animate-pulse" />
       ))}
     </div>
   );
@@ -25,7 +22,7 @@ export function DataRoomList() {
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+      <div className="rounded bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
         {error?.message || 'Failed to load data rooms'}
       </div>
     );
@@ -33,40 +30,39 @@ export function DataRoomList() {
 
   if (!dataRooms?.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <Database className="h-12 w-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">No data rooms</p>
-        <p className="text-sm">Create your first data room to get started</p>
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+        <Database className="h-8 w-8 mb-2 opacity-40" />
+        <p className="text-sm font-medium">No data rooms</p>
+        <p className="text-xs">Create your first data room to get started</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-0.5">
       {dataRooms.map((room) => (
         <Link
           key={room.id}
           to={`/data-rooms/${room.id}`}
           className={cn(
-            'flex items-center justify-between p-4 rounded-lg',
-            'border border-border bg-card hover:bg-muted/50',
-            'transition-colors duration-150'
+            'flex items-center justify-between px-3 py-2 rounded',
+            'hover:bg-surface-2 transition-colors duration-75 group'
           )}
         >
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
-              <Database className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-medium text-foreground">{room.name}</h3>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Database className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <span className="text-sm font-medium text-foreground truncate block">
+                {room.name}
+              </span>
               {room.description && (
-                <p className="text-sm text-muted-foreground line-clamp-1">
+                <span className="text-xs text-muted-foreground truncate block">
                   {room.description}
-                </p>
+                </span>
               )}
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
         </Link>
       ))}
     </div>
