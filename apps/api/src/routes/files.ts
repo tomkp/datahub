@@ -102,15 +102,26 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
 
     const runByVersionId = new Map(runs.map((r) => [r.fileVersionId, r]));
 
+    // Get pipeline names for versions that have a pipelineId
+    const pipelineIds = Array.from(latestVersionByFile.values())
+      .map((v) => v.pipelineId)
+      .filter((id): id is string => id !== null);
+    const pipelineList = pipelineIds.length > 0
+      ? db.select().from(pipelines).where(inArray(pipelines.id, pipelineIds)).all()
+      : [];
+    const pipelineById = new Map(pipelineList.map((p) => [p.id, p]));
+
     // Combine file data with latest version and pipeline status
     const result = fileList.map((file) => {
       const latestVersion = latestVersionByFile.get(file.id);
       const pipelineRun = latestVersion ? runByVersionId.get(latestVersion.id) : undefined;
+      const pipeline = latestVersion?.pipelineId ? pipelineById.get(latestVersion.pipelineId) : undefined;
       return {
         ...file,
         latestVersion,
         versionCount: versionCountByFile.get(file.id) || 0,
         pipelineStatus: pipelineRun?.status,
+        pipelineName: pipeline?.name,
       };
     });
 

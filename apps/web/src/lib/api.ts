@@ -63,6 +63,7 @@ export interface File {
   latestVersion?: FileVersion;
   versionCount?: number;
   pipelineStatus?: PipelineRunStatus;
+  pipelineName?: string;
 }
 
 export interface Pipeline {

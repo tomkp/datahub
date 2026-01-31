@@ -7,7 +7,7 @@ import { applyFileFilters, type FileFilterState } from './FileFilters';
 import { FileTypeBadge } from './FileTypeBadge';
 import { QueryError } from './ui';
 
-const sortColumns = ['name', 'type', 'status', 'modified'] as const;
+const sortColumns = ['name', 'type', 'pipeline', 'status', 'modified'] as const;
 type SortColumn = typeof sortColumns[number];
 const sortDirections = ['asc', 'desc'] as const;
 type SortDirection = typeof sortDirections[number];
@@ -95,6 +95,9 @@ function sortFiles(files: FileType[], sortBy: SortColumn, sortDir: SortDirection
         break;
       case 'type':
         comparison = getFileExtension(a.name).localeCompare(getFileExtension(b.name));
+        break;
+      case 'pipeline':
+        comparison = (a.pipelineName || '').localeCompare(b.pipelineName || '');
         break;
       case 'status': {
         const statusOrder = { processed: 0, processing: 1, errored: 2 };
@@ -216,6 +219,7 @@ export function FileList({ folderId, filters, onClearFilters, selectedFileId, on
           <tr className="bg-surface-1 border-b border-border">
             <SortableHeader column="name" label="Name" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} />
             <SortableHeader column="type" label="Type" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="w-20" />
+            <SortableHeader column="pipeline" label="Pipeline" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="w-32" />
             <SortableHeader column="status" label="Status" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="w-16" align="center" />
             <SortableHeader column="modified" label="Modified" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="w-28" />
             <th className="w-8" />
@@ -249,6 +253,9 @@ export function FileList({ folderId, filters, onClearFilters, selectedFileId, on
                 </td>
                 <td className="px-3 py-2">
                   <FileTypeBadge filename={file.name} />
+                </td>
+                <td className="px-3 py-2 text-xs text-muted-foreground truncate">
+                  {file.pipelineName || '-'}
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex justify-center">
