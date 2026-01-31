@@ -2,7 +2,8 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq, desc, inArray } from 'drizzle-orm';
 import type { AppDatabase } from '../db';
-import { dataRooms, pipelines, pipelineRuns, pipelineRunSteps, pipelineRunExpectedEvents, fileVersions, files, folders } from '../db/schema';
+import { dataRooms, pipelines, pipelineRuns, fileVersions, files, folders } from '../db/schema';
+import { CascadeDeletionService } from '../services/cascade-deletion';
 
 const createDataRoomSchema = z.object({
   tenantId: z.string().min(1),
@@ -126,46 +127,8 @@ export function dataRoomsRoutes(db: AppDatabase) {
   // Delete data room
   app.delete('/:id', (c) => {
     const id = c.req.param('id');
-
-    // Get all files in this data room
-    const roomFiles = db.select().from(files).where(eq(files.dataRoomId, id)).all();
-    const fileIds = roomFiles.map(f => f.id);
-
-    if (fileIds.length > 0) {
-      // Get all versions for these files
-      const versions = db.select().from(fileVersions).where(inArray(fileVersions.fileId, fileIds)).all();
-      const versionIds = versions.map(v => v.id);
-
-      if (versionIds.length > 0) {
-        // Get all pipeline runs for these versions
-        const runs = db.select().from(pipelineRuns).where(inArray(pipelineRuns.fileVersionId, versionIds)).all();
-        const runIds = runs.map(r => r.id);
-
-        // Delete pipeline run steps and expected events
-        if (runIds.length > 0) {
-          db.delete(pipelineRunExpectedEvents).where(inArray(pipelineRunExpectedEvents.pipelineRunId, runIds)).run();
-          db.delete(pipelineRunSteps).where(inArray(pipelineRunSteps.pipelineRunId, runIds)).run();
-        }
-
-        // Delete pipeline runs
-        db.delete(pipelineRuns).where(inArray(pipelineRuns.fileVersionId, versionIds)).run();
-      }
-
-      // Delete file versions
-      db.delete(fileVersions).where(inArray(fileVersions.fileId, fileIds)).run();
-
-      // Delete files
-      db.delete(files).where(eq(files.dataRoomId, id)).run();
-    }
-
-    // Delete folders
-    db.delete(folders).where(eq(folders.dataRoomId, id)).run();
-
-    // Delete pipelines
-    db.delete(pipelines).where(eq(pipelines.dataRoomId, id)).run();
-
-    // Delete data room
-    db.delete(dataRooms).where(eq(dataRooms.id, id)).run();
+    const cascadeService = new CascadeDeletionService(db);
+    cascadeService.deleteDataRoom(id);
     return c.body(null, 204);
   });
 
