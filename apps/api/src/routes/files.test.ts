@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { createDb, type DbConnection } from '../db';
-import { tenants, dataRooms, folders, files, fileVersions, pipelineRuns, pipelines, users } from '../db/schema';
+import { tenants, dataRooms, folders, files, fileVersions, pipelineRuns, pipelineRunSteps, pipelines, users } from '../db/schema';
 import { filesRoutes } from './files';
 import { FileStorage } from '../services/storage';
 
@@ -108,6 +108,27 @@ describe('Files Routes', () => {
         updated_at TEXT NOT NULL
       )
     `);
+    conn.db.run(`
+      CREATE TABLE pipeline_run_steps (
+        id TEXT PRIMARY KEY,
+        pipeline_run_id TEXT NOT NULL,
+        step TEXT NOT NULL,
+        status TEXT NOT NULL,
+        error_message TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+    conn.db.run(`
+      CREATE TABLE pipeline_run_expected_events (
+        pipeline_run_id TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        event_ref TEXT NOT NULL,
+        event_received_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
 
     // Insert test data
     const now = new Date().toISOString();
@@ -151,6 +172,7 @@ describe('Files Routes', () => {
   });
 
   beforeEach(() => {
+    conn.db.run('DELETE FROM pipeline_run_steps');
     conn.db.run('DELETE FROM pipeline_runs');
     conn.db.run('DELETE FROM pipelines');
     conn.db.run('DELETE FROM file_versions');
@@ -389,6 +411,85 @@ describe('Files Routes', () => {
       expect(body.find((f: any) => f.name === 'test-0.pdf').pipelineStatus).toBe('processing');
       expect(body.find((f: any) => f.name === 'test-1.pdf').pipelineStatus).toBe('processed');
       expect(body.find((f: any) => f.name === 'test-2.pdf').pipelineStatus).toBe('errored');
+    });
+  });
+
+  describe('DELETE /files/:id', () => {
+    it('deletes file versions, pipeline runs, and pipeline run steps', async () => {
+      const now = new Date().toISOString();
+
+      // Create file with version
+      conn.db.insert(files).values({
+        id: 'file-1',
+        dataRoomId: 'room-1',
+        folderId: 'folder-1',
+        name: 'test.pdf',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      conn.db.insert(fileVersions).values({
+        id: 'version-1',
+        fileId: 'file-1',
+        storageUrl: '/storage/v1',
+        uploadedBy: 'user-1',
+        uploadedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create pipeline with run and steps
+      conn.db.insert(pipelines).values({
+        id: 'pipeline-1',
+        dataRoomId: 'room-1',
+        name: 'Test Pipeline',
+        steps: JSON.stringify(['step1', 'step2']),
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      conn.db.insert(pipelineRuns).values({
+        id: 'run-1',
+        pipelineId: 'pipeline-1',
+        fileVersionId: 'version-1',
+        status: 'processing',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      conn.db.insert(pipelineRunSteps).values({
+        id: 'step-1',
+        pipelineRunId: 'run-1',
+        step: 'step1',
+        status: 'processed',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      conn.db.insert(pipelineRunSteps).values({
+        id: 'step-2',
+        pipelineRunId: 'run-1',
+        step: 'step2',
+        status: 'processing',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Verify data exists before delete
+      expect(conn.db.select().from(files).all()).toHaveLength(1);
+      expect(conn.db.select().from(fileVersions).all()).toHaveLength(1);
+      expect(conn.db.select().from(pipelineRuns).all()).toHaveLength(1);
+      expect(conn.db.select().from(pipelineRunSteps).all()).toHaveLength(2);
+
+      // Delete file
+      const res = await app.request('/api/files/file-1', { method: 'DELETE' });
+      expect(res.status).toBe(204);
+
+      // Verify cascade delete
+      expect(conn.db.select().from(files).all()).toHaveLength(0);
+      expect(conn.db.select().from(fileVersions).all()).toHaveLength(0);
+      expect(conn.db.select().from(pipelineRuns).all()).toHaveLength(0);
+      expect(conn.db.select().from(pipelineRunSteps).all()).toHaveLength(0);
     });
   });
 });

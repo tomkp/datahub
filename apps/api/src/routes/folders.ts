@@ -1,8 +1,18 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { eq, and } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { AppDatabase } from '../db';
-import { folders } from '../db/schema';
+import { folders, files, fileVersions, pipelineRuns, pipelineRunSteps, pipelineRunExpectedEvents } from '../db/schema';
+
+// Helper to collect all descendant folder IDs recursively
+function collectFolderIds(db: AppDatabase, folderId: string): string[] {
+  const result: string[] = [folderId];
+  const children = db.select().from(folders).where(eq(folders.parentId, folderId)).all();
+  for (const child of children) {
+    result.push(...collectFolderIds(db, child.id));
+  }
+  return result;
+}
 
 const createFolderSchema = z.object({
   name: z.string().min(1),
@@ -102,7 +112,44 @@ export function foldersRoutes(db: AppDatabase) {
   // Delete folder
   app.delete('/folders/:id', (c) => {
     const id = c.req.param('id');
-    db.delete(folders).where(eq(folders.id, id)).run();
+
+    // Collect all folder IDs (including descendants)
+    const folderIds = collectFolderIds(db, id);
+
+    // Get all files in these folders
+    const folderFiles = db.select().from(files).where(inArray(files.folderId, folderIds)).all();
+    const fileIds = folderFiles.map(f => f.id);
+
+    if (fileIds.length > 0) {
+      // Get all versions for these files
+      const versions = db.select().from(fileVersions).where(inArray(fileVersions.fileId, fileIds)).all();
+      const versionIds = versions.map(v => v.id);
+
+      if (versionIds.length > 0) {
+        // Get all pipeline runs for these versions
+        const runs = db.select().from(pipelineRuns).where(inArray(pipelineRuns.fileVersionId, versionIds)).all();
+        const runIds = runs.map(r => r.id);
+
+        // Delete pipeline run steps and expected events
+        if (runIds.length > 0) {
+          db.delete(pipelineRunExpectedEvents).where(inArray(pipelineRunExpectedEvents.pipelineRunId, runIds)).run();
+          db.delete(pipelineRunSteps).where(inArray(pipelineRunSteps.pipelineRunId, runIds)).run();
+        }
+
+        // Delete pipeline runs
+        db.delete(pipelineRuns).where(inArray(pipelineRuns.fileVersionId, versionIds)).run();
+      }
+
+      // Delete file versions
+      db.delete(fileVersions).where(inArray(fileVersions.fileId, fileIds)).run();
+
+      // Delete files
+      db.delete(files).where(inArray(files.folderId, folderIds)).run();
+    }
+
+    // Delete all folders (in reverse order to respect hierarchy)
+    db.delete(folders).where(inArray(folders.id, folderIds)).run();
+
     return c.body(null, 204);
   });
 
