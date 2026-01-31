@@ -67,6 +67,7 @@ db.run(`
   CREATE TABLE IF NOT EXISTS file_versions (
     id TEXT PRIMARY KEY,
     file_id TEXT NOT NULL REFERENCES files(id),
+    pipeline_id TEXT REFERENCES pipelines(id),
     storage_url TEXT NOT NULL,
     uploaded_by TEXT NOT NULL REFERENCES users(id),
     uploaded_at TEXT NOT NULL,
