@@ -29,17 +29,22 @@ export function UploadProgress({ uploads }: UploadProgressProps) {
           </div>
 
           {upload.status === 'uploading' && (
-            <div
-              role="progressbar"
-              aria-valuenow={upload.progress}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              className="h-1.5 bg-muted rounded-full overflow-hidden"
-            >
+            <div className="flex items-center gap-2">
               <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${upload.progress}%` }}
-              />
+                role="progressbar"
+                aria-valuenow={upload.progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden"
+              >
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${upload.progress}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {upload.progress}%
+              </span>
             </div>
           )}
 

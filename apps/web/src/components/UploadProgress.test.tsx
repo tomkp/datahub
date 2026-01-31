@@ -66,4 +66,12 @@ describe('UploadProgress', () => {
     render(<UploadProgress uploads={uploads} />);
     expect(screen.getByText(/pending/i)).toBeInTheDocument();
   });
+
+  it('displays progress percentage during upload', () => {
+    const uploads: UploadItem[] = [
+      { id: '1', fileName: 'test.csv', progress: 75, status: 'uploading' },
+    ];
+    render(<UploadProgress uploads={uploads} />);
+    expect(screen.getByText('75%')).toBeInTheDocument();
+  });
 });
