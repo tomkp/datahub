@@ -101,7 +101,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ApiContext.Provider value={apiClient}>
         <ToastProvider>
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Layout>
               <Routes>
                 <Route path="/" element={<Dashboard />} />

@@ -63,7 +63,7 @@ const createWrapper = (api: ApiClient) => {
     },
   });
   return ({ children }: { children: React.ReactNode }) => (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ApiContext.Provider value={api}>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>{children}</ToastProvider>
