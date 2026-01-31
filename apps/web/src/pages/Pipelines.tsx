@@ -10,6 +10,7 @@ import type { Pipeline, PipelineRun, DataRoom } from '../lib/api';
 
 const DEFAULT_RUNS_LIMIT = 10;
 const filterValues = ['all', 'active', 'failed'] as const;
+type FilterValue = typeof filterValues[number];
 
 function formatDate(dateString?: string) {
   if (!dateString) return '-';
@@ -62,6 +63,13 @@ function PipelineCard({ pipeline }: { pipeline: Pipeline }) {
   );
 }
 
+function filterRuns(runs: PipelineRun[], filter: FilterValue): PipelineRun[] {
+  if (filter === 'all') return runs;
+  if (filter === 'active') return runs.filter(run => run.status === 'processing');
+  if (filter === 'failed') return runs.filter(run => run.status === 'errored');
+  return runs;
+}
+
 function RecentRunsList({ runs, dataRoomId }: { runs: PipelineRun[]; dataRoomId: string }) {
   if (runs.length === 0) {
     return <p className="text-sm text-muted-foreground">No runs yet</p>;
@@ -103,7 +111,13 @@ function RecentRunsList({ runs, dataRoomId }: { runs: PipelineRun[]; dataRoomId:
   );
 }
 
-function DataRoomSection({ dataRoom, runsLimit }: { dataRoom: DataRoom; runsLimit: number }) {
+interface DataRoomSectionProps {
+  dataRoom: DataRoom;
+  runsLimit: number;
+  filter: FilterValue;
+}
+
+function DataRoomSection({ dataRoom, runsLimit, filter }: DataRoomSectionProps) {
   const { data: pipelines, isLoading: pipelinesLoading } = usePipelines(dataRoom.id);
   const { data: runs, isLoading: runsLoading } = useDataRoomPipelineRuns(dataRoom.id, runsLimit);
 
@@ -114,6 +128,14 @@ function DataRoomSection({ dataRoom, runsLimit }: { dataRoom: DataRoom; runsLimi
   }
 
   if (!pipelines?.length) {
+    return null;
+  }
+
+  // Filter runs based on the current filter
+  const filteredRuns = filterRuns(runs || [], filter);
+
+  // When filtering, hide sections that have no matching runs
+  if (filter !== 'all' && filteredRuns.length === 0) {
     return null;
   }
 
@@ -148,12 +170,13 @@ function DataRoomSection({ dataRoom, runsLimit }: { dataRoom: DataRoom; runsLimi
       {/* Recent Runs */}
       <div className="p-4">
         <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">
-          Recent Runs
+          {filter === 'all' ? 'Recent Runs' : filter === 'active' ? 'Active Runs' : 'Failed Runs'}
+          {filteredRuns.length > 0 && ` (${filteredRuns.length})`}
         </h4>
         {runsLoading ? (
           <div className="text-sm text-muted-foreground">Loading runs...</div>
         ) : (
-          <RecentRunsList runs={runs || []} dataRoomId={dataRoom.id} />
+          <RecentRunsList runs={filteredRuns} dataRoomId={dataRoom.id} />
         )}
       </div>
     </div>
@@ -213,7 +236,7 @@ export function Pipelines() {
       {/* Data room sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {dataRooms?.map((dataRoom) => (
-          <DataRoomSection key={dataRoom.id} dataRoom={dataRoom} runsLimit={runsLimit} />
+          <DataRoomSection key={dataRoom.id} dataRoom={dataRoom} runsLimit={runsLimit} filter={filter} />
         ))}
       </div>
 

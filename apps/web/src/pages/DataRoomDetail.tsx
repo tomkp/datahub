@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, FolderPlus } from 'lucide-react';
-import { useQueryState, parseAsBoolean } from 'nuqs';
+import { useQueryState, parseAsBoolean, parseAsString, parseAsArrayOf, parseAsStringLiteral } from 'nuqs';
 import { useDataRoom } from '../hooks/useDataRooms';
 import { useCreateFolder } from '../hooks/useFolders';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -15,81 +15,46 @@ import { FileDetailSidebar } from '../components/FileDetailSidebar';
 import { QueryError } from '../components/ui';
 import { useToast } from '../components/ui/Toast';
 
+const dateRangeValues = ['today', 'last7days', 'last30days', 'all'] as const;
+
 export function DataRoomDetail() {
   const { id } = useParams<{ id: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { data: dataRoom, isLoading, isError, error, refetch } = useDataRoom(id!);
+
+  // URL state management with nuqs
   const [showCreateFolder, setShowCreateFolder] = useQueryState('createFolder', parseAsBoolean.withDefault(false));
+  const [selectedFolderId, setSelectedFolderId] = useQueryState('folder', parseAsString.withDefault(''));
+  const [selectedFileId, setSelectedFileId] = useQueryState('file', parseAsString.withDefault(''));
+  const [filterTypes, setFilterTypes] = useQueryState('types', parseAsArrayOf(parseAsString, ',').withDefault([]));
+  const [filterDateRange, setFilterDateRange] = useQueryState('date', parseAsStringLiteral(dateRangeValues));
+
+  // Local state for form inputs
   const [folderName, setFolderName] = useState('');
   const { success: showSuccess, error: showError } = useToast();
 
   useDocumentTitle(dataRoom?.name);
 
-  // Get folder and file IDs from URL
-  const selectedFolderId = searchParams.get('folder') || '';
-  const selectedFileId = searchParams.get('file') || '';
+  // Handler that clears file selection when folder changes
+  const handleFolderChange = useCallback((folderId: string) => {
+    setSelectedFolderId(folderId);
+    setSelectedFileId('');
+  }, [setSelectedFolderId, setSelectedFileId]);
 
-  const setSelectedFolderId = useCallback((folderId: string) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      if (folderId) {
-        params.set('folder', folderId);
-      } else {
-        params.delete('folder');
-      }
-      // Clear file selection when changing folders
-      params.delete('file');
-      return params;
-    });
-  }, [setSearchParams]);
-
-  const handleSelectFile = useCallback((fileId: string) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.set('file', fileId);
-      return params;
-    });
-  }, [setSearchParams]);
-
-  const handleCloseFile = useCallback(() => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.delete('file');
-      return params;
-    });
-  }, [setSearchParams]);
-
-  // Parse filters from URL
+  // Build filters object from URL state
   const filters: FileFilterState = {
-    fileTypes: searchParams.get('types')?.split(',').filter(Boolean),
-    dateRange: searchParams.get('date') as FileFilterState['dateRange'],
+    fileTypes: filterTypes.length > 0 ? filterTypes.filter(Boolean) : undefined,
+    dateRange: filterDateRange as FileFilterState['dateRange'],
   };
 
-  const handleFiltersChange = (newFilters: FileFilterState) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      if (newFilters.fileTypes?.length) {
-        params.set('types', newFilters.fileTypes.join(','));
-      } else {
-        params.delete('types');
-      }
-      if (newFilters.dateRange) {
-        params.set('date', newFilters.dateRange);
-      } else {
-        params.delete('date');
-      }
-      return params;
-    });
-  };
+  const handleFiltersChange = useCallback((newFilters: FileFilterState) => {
+    setFilterTypes(newFilters.fileTypes?.length ? newFilters.fileTypes : []);
+    setFilterDateRange(newFilters.dateRange || null);
+  }, [setFilterTypes, setFilterDateRange]);
 
-  const handleClearFilters = () => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.delete('types');
-      params.delete('date');
-      return params;
-    });
-  };
+  const handleClearFilters = useCallback(() => {
+    setFilterTypes([]);
+    setFilterDateRange(null);
+  }, [setFilterTypes, setFilterDateRange]);
 
   const createFolderMutation = useCreateFolder();
   const { uploads, uploadFiles, clearCompleted } = useFileUpload(selectedFolderId);
@@ -226,7 +191,7 @@ export function DataRoomDetail() {
         <div className="w-64 border-r border-border overflow-y-auto">
           <FileTree
             dataRoomId={id!}
-            onSelectFolder={setSelectedFolderId}
+            onSelectFolder={handleFolderChange}
             selectedFolderId={selectedFolderId}
           />
         </div>
@@ -273,7 +238,7 @@ export function DataRoomDetail() {
                 filters={filters}
                 onClearFilters={handleClearFilters}
                 selectedFileId={selectedFileId}
-                onSelectFile={(file) => handleSelectFile(file.id)}
+                onSelectFile={(file) => setSelectedFileId(file.id)}
               />
             </div>
           ) : (
@@ -288,7 +253,7 @@ export function DataRoomDetail() {
           <div className="w-100 border-l border-border overflow-y-auto">
             <FileDetailSidebar
               fileId={selectedFileId}
-              onClose={handleCloseFile}
+              onClose={() => setSelectedFileId('')}
             />
           </div>
         )}

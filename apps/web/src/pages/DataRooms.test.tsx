@@ -1,89 +1,19 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
-import { NuqsAdapter } from 'nuqs/adapters/react-router/v6';
-import { ApiContext, type ApiClient } from '../lib/api';
+import { createMockApi, createTestWrapper } from '../test-utils/setup';
 import { DataRooms } from './DataRooms';
-
-const createMockApi = (): ApiClient => ({
-  baseUrl: 'http://localhost:3001',
-  token: 'test-token',
-  tenants: {
-    list: vi.fn(),
-    get: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
-  dataRooms: {
-    list: vi.fn().mockResolvedValue([]),
-    get: vi.fn(),
-    create: vi.fn().mockResolvedValue({ id: 'dr1', name: 'Test Room' }),
-    update: vi.fn(),
-    delete: vi.fn(),
-    getFolders: vi.fn(),
-    getPipelineRuns: vi.fn(),
-  },
-  folders: {
-    get: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    getFiles: vi.fn(),
-  },
-  files: {
-    get: vi.fn(),
-    upload: vi.fn(),
-    uploadVersion: vi.fn(),
-    delete: vi.fn(),
-    getVersions: vi.fn(),
-  },
-  pipelines: {
-    list: vi.fn(),
-    get: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    getRuns: vi.fn(),
-  },
-  pipelineRuns: {
-    get: vi.fn(),
-    getByFileVersion: vi.fn(),
-    create: vi.fn(),
-    retry: vi.fn(),
-  },
-});
-
-const createWrapper = (api: ApiClient) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-  return ({ children }: { children: React.ReactNode }) => (
-    <MemoryRouter initialEntries={['/data-rooms']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <NuqsAdapter>
-        <ApiContext.Provider value={api}>
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-        </ApiContext.Provider>
-      </NuqsAdapter>
-    </MemoryRouter>
-  );
-};
 
 describe('DataRooms', () => {
   it('renders the data rooms page', async () => {
     const api = createMockApi();
-    render(<DataRooms />, { wrapper: createWrapper(api) });
+    render(<DataRooms />, { wrapper: createTestWrapper(api, { initialEntries: ['/data-rooms'] }) });
 
     expect(await screen.findByRole('heading', { level: 1, name: /data rooms/i })).toBeInTheDocument();
   });
 
   it('has a new data room button', async () => {
     const api = createMockApi();
-    render(<DataRooms />, { wrapper: createWrapper(api) });
+    render(<DataRooms />, { wrapper: createTestWrapper(api, { initialEntries: ['/data-rooms'] }) });
 
     expect(await screen.findByRole('button', { name: /new data room/i })).toBeInTheDocument();
   });
@@ -91,7 +21,7 @@ describe('DataRooms', () => {
   describe('create modal state', () => {
     it('does not show create form initially', async () => {
       const api = createMockApi();
-      render(<DataRooms />, { wrapper: createWrapper(api) });
+      render(<DataRooms />, { wrapper: createTestWrapper(api, { initialEntries: ['/data-rooms'] }) });
 
       await screen.findByRole('heading', { level: 1, name: /data rooms/i });
       expect(screen.queryByPlaceholderText(/enter data room name/i)).not.toBeInTheDocument();
@@ -99,7 +29,7 @@ describe('DataRooms', () => {
 
     it('shows create form when new data room button is clicked', async () => {
       const api = createMockApi();
-      render(<DataRooms />, { wrapper: createWrapper(api) });
+      render(<DataRooms />, { wrapper: createTestWrapper(api, { initialEntries: ['/data-rooms'] }) });
 
       const button = await screen.findByRole('button', { name: /new data room/i });
       fireEvent.click(button);
@@ -109,7 +39,7 @@ describe('DataRooms', () => {
 
     it('hides create form when cancel is clicked', async () => {
       const api = createMockApi();
-      render(<DataRooms />, { wrapper: createWrapper(api) });
+      render(<DataRooms />, { wrapper: createTestWrapper(api, { initialEntries: ['/data-rooms'] }) });
 
       const newButton = await screen.findByRole('button', { name: /new data room/i });
       fireEvent.click(newButton);
@@ -122,7 +52,7 @@ describe('DataRooms', () => {
 
     it('has a create button that is disabled when name is empty', async () => {
       const api = createMockApi();
-      render(<DataRooms />, { wrapper: createWrapper(api) });
+      render(<DataRooms />, { wrapper: createTestWrapper(api, { initialEntries: ['/data-rooms'] }) });
 
       const newButton = await screen.findByRole('button', { name: /new data room/i });
       fireEvent.click(newButton);
@@ -133,7 +63,7 @@ describe('DataRooms', () => {
 
     it('enables create button when name is entered', async () => {
       const api = createMockApi();
-      render(<DataRooms />, { wrapper: createWrapper(api) });
+      render(<DataRooms />, { wrapper: createTestWrapper(api, { initialEntries: ['/data-rooms'] }) });
 
       const newButton = await screen.findByRole('button', { name: /new data room/i });
       fireEvent.click(newButton);
