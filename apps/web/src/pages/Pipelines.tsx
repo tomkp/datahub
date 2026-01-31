@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { GitBranch, ChevronRight, AlertCircle, CheckCircle2, Loader2, Filter } from 'lucide-react';
-import { useQueryState, parseAsStringLiteral } from 'nuqs';
+import { useQueryState, parseAsStringLiteral, parseAsString } from 'nuqs';
 import { useDataRooms } from '../hooks/useDataRooms';
 import { usePipelines, useDataRoomPipelineRuns } from '../hooks/usePipelines';
 import { QueryError } from '../components/ui';
@@ -302,9 +302,17 @@ function FilterTabs({ value, onChange, counts }: FilterTabsProps) {
 export function Pipelines() {
   const { data: dataRooms, isLoading, isError, error, refetch } = useDataRooms();
   const [filter, setFilter] = useQueryState('filter', parseAsStringLiteral(filterValues).withDefault('all'));
+  const [dataRoomId, setDataRoomId] = useQueryState('dataRoom', parseAsString);
   const runsLimit = DEFAULT_RUNS_LIMIT;
 
-  useDocumentTitle('Pipelines');
+  // Filter to specific data room if query param is set
+  const filteredDataRooms = dataRoomId
+    ? dataRooms?.filter(dr => dr.id === dataRoomId)
+    : dataRooms;
+
+  const selectedDataRoom = dataRoomId ? filteredDataRooms?.[0] : null;
+
+  useDocumentTitle(selectedDataRoom ? `Pipelines - ${selectedDataRoom.name}` : 'Pipelines');
 
   // Aggregate counts from all data rooms (we'll need to fetch this)
   // For now, use placeholder - the individual sections will show their own counts
@@ -338,29 +346,52 @@ export function Pipelines() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Pipelines</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Monitor data processing across all data rooms
-          </p>
+          {selectedDataRoom ? (
+            <>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <button
+                  onClick={() => setDataRoomId(null)}
+                  className="hover:text-foreground"
+                >
+                  Pipelines
+                </button>
+                <ChevronRight className="h-4 w-4" />
+                <span className="text-foreground">{selectedDataRoom.name}</span>
+              </div>
+              <h1 className="text-2xl font-semibold text-foreground">
+                {selectedDataRoom.name} Pipelines
+              </h1>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-semibold text-foreground">Pipelines</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Monitor data processing across all data rooms
+              </p>
+            </>
+          )}
         </div>
         <FilterTabs value={filter} onChange={setFilter} counts={counts} />
       </div>
 
       {/* Data room sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {dataRooms?.map((dataRoom) => (
+      <div className={cn(
+        'grid gap-4',
+        selectedDataRoom ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
+      )}>
+        {filteredDataRooms?.map((dataRoom) => (
           <DataRoomSection
             key={dataRoom.id}
             dataRoom={dataRoom}
             runsLimit={runsLimit}
             filter={filter}
-            runsPerPipeline={RUNS_PER_PIPELINE}
+            runsPerPipeline={selectedDataRoom ? 10 : RUNS_PER_PIPELINE}
           />
         ))}
       </div>
 
       {/* Empty state when filter shows nothing */}
-      {filter !== 'all' && dataRooms?.length && (
+      {filter !== 'all' && filteredDataRooms?.length && (
         <div className="hidden only:flex flex-col items-center justify-center py-12 text-muted-foreground">
           <Filter className="h-12 w-12 mb-4 opacity-40" />
           <h3 className="text-lg font-medium text-foreground mb-2">
@@ -376,6 +407,23 @@ export function Pipelines() {
             className="mt-4 text-sm text-primary hover:underline"
           >
             View all runs
+          </button>
+        </div>
+      )}
+
+      {/* Empty state - data room not found */}
+      {dataRoomId && !filteredDataRooms?.length && dataRooms?.length && (
+        <div className="text-center py-12">
+          <GitBranch className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">Data room not found</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            The specified data room could not be found.
+          </p>
+          <button
+            onClick={() => setDataRoomId(null)}
+            className="text-sm text-primary hover:underline"
+          >
+            View all pipelines
           </button>
         </div>
       )}

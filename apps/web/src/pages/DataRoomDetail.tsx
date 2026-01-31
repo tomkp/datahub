@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, FolderPlus } from 'lucide-react';
+import { ChevronRight, FolderPlus, GitBranch } from 'lucide-react';
 import { useQueryState, parseAsBoolean, parseAsString, parseAsArrayOf, parseAsStringLiteral } from 'nuqs';
 import { useDataRoom } from '../hooks/useDataRooms';
 import { useCreateFolder } from '../hooks/useFolders';
@@ -139,6 +139,13 @@ export function DataRoomDetail() {
             {dataRoom.name}
           </h1>
           <div className="flex items-center gap-2">
+            <Link
+              to={`/pipelines?dataRoom=${id}`}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted/50 text-sm transition-colors duration-150"
+            >
+              <GitBranch className="h-4 w-4" />
+              Pipelines
+            </Link>
             <button
               onClick={() => setShowCreateFolder(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted/50 text-sm transition-colors duration-150"
