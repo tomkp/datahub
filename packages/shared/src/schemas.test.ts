@@ -124,9 +124,23 @@ describe('Schemas', () => {
       const pipeline = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         dataRoomId: '123e4567-e89b-12d3-a456-426614174001',
+        name: 'Premium Bordereau Pipeline',
         datasetKind: 'file_sharing',
         steps: ['malware_scan', 'pii_scan', 'ingestion'],
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      expect(() => pipelineSchema.parse(pipeline)).not.toThrow();
+    });
+
+    it('validates a pipeline with optional name', () => {
+      const pipeline = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        dataRoomId: '123e4567-e89b-12d3-a456-426614174001',
+        datasetKind: 'file_sharing',
+        steps: ['malware_scan', 'pii_scan', 'ingestion'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       expect(() => pipelineSchema.parse(pipeline)).not.toThrow();
     });
@@ -138,6 +152,7 @@ describe('Schemas', () => {
         datasetKind: 'file_sharing',
         steps: ['invalid_step'],
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       expect(() => pipelineSchema.parse(pipeline)).toThrow();
     });
@@ -147,7 +162,17 @@ describe('Schemas', () => {
     it('has correct pipeline steps', () => {
       expect(PIPELINE_STEPS).toContain('malware_scan');
       expect(PIPELINE_STEPS).toContain('pii_scan');
+      expect(PIPELINE_STEPS).toContain('pii_review');
+      expect(PIPELINE_STEPS).toContain('versioning');
+      expect(PIPELINE_STEPS).toContain('data_validation');
       expect(PIPELINE_STEPS).toContain('ingestion');
+      expect(PIPELINE_STEPS).toContain('control_checks');
+    });
+
+    it('has all pipeline steps used in seed data', () => {
+      // Additional steps used in seed data
+      expect(PIPELINE_STEPS).toContain('alert_routing');
+      expect(PIPELINE_STEPS).toContain('reconciliation');
     });
 
     it('has correct pipeline run statuses', () => {
@@ -162,6 +187,32 @@ describe('Schemas', () => {
 
     it('has correct dataset kinds', () => {
       expect(DATASET_KINDS).toContain('file_sharing');
+      expect(DATASET_KINDS).toContain('premium_bordereau');
+      expect(DATASET_KINDS).toContain('claims_bordereau');
+      expect(DATASET_KINDS).toContain('loss_run');
+      expect(DATASET_KINDS).toContain('exposure_data');
+      expect(DATASET_KINDS).toContain('treaty_statement');
+      expect(DATASET_KINDS).toContain('cat_model_output');
+      expect(DATASET_KINDS).toContain('financial_statement');
+      expect(DATASET_KINDS).toContain('reserve_analysis');
+      expect(DATASET_KINDS).toContain('valuation_data');
+    });
+
+    it('has all dataset kinds used in seed data', () => {
+      // Additional dataset kinds used in seed data for different cadences
+      expect(DATASET_KINDS).toContain('cat_event');
+      expect(DATASET_KINDS).toContain('market_rates');
+      expect(DATASET_KINDS).toContain('claims_alert');
+      expect(DATASET_KINDS).toContain('claims_summary');
+      expect(DATASET_KINDS).toContain('exposure_update');
+      expect(DATASET_KINDS).toContain('loss_development');
+      expect(DATASET_KINDS).toContain('monthly_bordereau');
+      expect(DATASET_KINDS).toContain('account_statement');
+      expect(DATASET_KINDS).toContain('reconciliation');
+      expect(DATASET_KINDS).toContain('treaty_renewal');
+      expect(DATASET_KINDS).toContain('annual_statement');
+      expect(DATASET_KINDS).toContain('reserve_certificate');
+      expect(DATASET_KINDS).toContain('audit_report');
     });
   });
 });

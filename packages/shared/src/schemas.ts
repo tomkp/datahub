@@ -9,6 +9,8 @@ export const PIPELINE_STEPS = [
   'data_validation',
   'ingestion',
   'control_checks',
+  'alert_routing',
+  'reconciliation',
 ] as const;
 
 export const PIPELINE_RUN_STATUS = [
@@ -35,6 +37,20 @@ export const DATASET_KINDS = [
   'financial_statement',
   'reserve_analysis',
   'valuation_data',
+  // Additional kinds for different cadences
+  'cat_event',
+  'market_rates',
+  'claims_alert',
+  'claims_summary',
+  'exposure_update',
+  'loss_development',
+  'monthly_bordereau',
+  'account_statement',
+  'reconciliation',
+  'treaty_renewal',
+  'annual_statement',
+  'reserve_certificate',
+  'audit_report',
 ] as const;
 
 // Zod enums
@@ -103,9 +119,11 @@ export const fileVersionSchema = z.object({
 export const pipelineSchema = z.object({
   id: z.string().uuid(),
   dataRoomId: z.string().uuid(),
+  name: z.string().min(1).optional(),
   datasetKind: datasetKindSchema,
   steps: z.array(pipelineStepSchema),
   createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export const pipelineRunSchema = z.object({

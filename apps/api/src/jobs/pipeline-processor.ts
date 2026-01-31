@@ -64,7 +64,10 @@ export class PipelineProcessor {
       throw new Error(`Pipeline ${pipelineId} not found`);
     }
 
-    const steps = JSON.parse(pipeline.steps as string) as string[];
+    // Handle both JSON string and parsed array (depends on how table was created)
+    const steps = typeof pipeline.steps === 'string'
+      ? JSON.parse(pipeline.steps) as string[]
+      : pipeline.steps as string[];
 
     // Create step records
     for (const step of steps) {
@@ -161,7 +164,10 @@ export class PipelineProcessor {
     }
 
     const now = new Date().toISOString();
-    const steps = JSON.parse(pipeline.steps as string) as string[];
+    // Handle both JSON string and parsed array (depends on how table was created)
+    const steps = typeof pipeline.steps === 'string'
+      ? JSON.parse(pipeline.steps) as string[]
+      : pipeline.steps as string[];
 
     // Reset run status
     this.db.update(pipelineRuns)
