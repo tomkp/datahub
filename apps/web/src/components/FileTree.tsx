@@ -299,7 +299,7 @@ export function FileTree({ dataRoomId, onSelectFolder, selectedFolderId }: FileT
   const rootFolders = folders.filter((f) => !f.parentId);
 
   return (
-    <div role="tree" aria-label="Folder navigation" className="py-1">
+    <div role="tree" aria-label="Folder navigation" className="py-1 px-1">
       {rootFolders.map((folder) => (
         <FolderItem
           key={folder.id}
