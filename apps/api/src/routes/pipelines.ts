@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
+import { nowISO, PIPELINE_STEPS, DATASET_KINDS } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { pipelines, pipelineRuns, pipelineRunSteps, fileVersions, files, folders } from '../db/schema';
-import { PIPELINE_STEPS, DATASET_KINDS } from '@datahub/shared';
 
 const createPipelineSchema = z.object({
   datasetKind: z.enum(DATASET_KINDS),
@@ -36,7 +36,7 @@ export function pipelinesRoutes(db: AppDatabase) {
     }
 
     const id = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = nowISO();
 
     const pipeline = {
       id,
@@ -161,7 +161,7 @@ export function pipelinesRoutes(db: AppDatabase) {
     }
 
     const id = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = nowISO();
 
     const run = {
       id,

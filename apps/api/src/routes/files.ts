@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { eq, desc, inArray } from 'drizzle-orm';
+import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { files, fileVersions, folders, pipelineRuns } from '../db/schema';
 import { FileStorage } from '../services/storage';
@@ -85,7 +86,7 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
 
     const fileId = crypto.randomUUID();
     const versionId = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = nowISO();
 
     // Save file to storage
     const content = Buffer.from(await uploadedFile.arrayBuffer());
@@ -160,7 +161,7 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
     }
 
     const versionId = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = nowISO();
 
     // Save file to storage
     const content = Buffer.from(await uploadedFile.arrayBuffer());

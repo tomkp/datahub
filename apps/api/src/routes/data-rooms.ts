@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq, desc, inArray } from 'drizzle-orm';
+import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { dataRooms, pipelines, pipelineRuns, fileVersions, files, folders } from '../db/schema';
 import { CascadeDeletionService } from '../services/cascade-deletion';
@@ -46,7 +47,7 @@ export function dataRoomsRoutes(db: AppDatabase) {
     }
 
     const id = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = nowISO();
     const storageUrl = `/data/uploads/${id}`;
 
     const dataRoom = {
@@ -108,7 +109,7 @@ export function dataRoomsRoutes(db: AppDatabase) {
     const updated = {
       ...existing,
       ...parsed.data,
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowISO(),
     };
 
     db.update(dataRooms).set(updated).where(eq(dataRooms.id, id)).run();
@@ -116,7 +117,7 @@ export function dataRoomsRoutes(db: AppDatabase) {
     // If name changed, update root folder name to match
     if (parsed.data.name) {
       db.update(folders)
-        .set({ name: parsed.data.name, updatedAt: new Date().toISOString() })
+        .set({ name: parsed.data.name, updatedAt: nowISO() })
         .where(eq(folders.id, `${id}-root`))
         .run();
     }

@@ -1,5 +1,6 @@
 import { Context, MiddlewareHandler } from 'hono';
 import { eq } from 'drizzle-orm';
+import { extractBearerToken } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { users } from '../db/schema';
 
@@ -15,16 +16,11 @@ const USER_KEY = 'user';
 export function authMiddleware(db: AppDatabase): MiddlewareHandler {
   return async (c, next) => {
     const authHeader = c.req.header('Authorization');
+    const token = extractBearerToken(authHeader);
 
-    if (!authHeader) {
+    if (!token) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
-
-    if (!authHeader.startsWith('Bearer ')) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    const token = authHeader.slice(7);
 
     const user = db
       .select()
@@ -48,9 +44,9 @@ export function getUser(c: Context): User {
 export function optionalAuthMiddleware(db: AppDatabase): MiddlewareHandler {
   return async (c, next) => {
     const authHeader = c.req.header('Authorization');
+    const token = extractBearerToken(authHeader);
 
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.slice(7);
+    if (token) {
       const user = db
         .select()
         .from(users)
