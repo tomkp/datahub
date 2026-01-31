@@ -11,11 +11,13 @@ describe('Pipelines', () => {
     expect(await screen.findByRole('heading', { level: 1, name: /pipelines/i })).toBeInTheDocument();
   });
 
-  it('has a filter dropdown', async () => {
+  it('has filter tabs', async () => {
     const api = createMockApi();
     render(<Pipelines />, { wrapper: createTestWrapper(api, { initialEntries: ['/pipelines'] }) });
 
-    expect(await screen.findByRole('combobox')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /all/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /active/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /failed/i })).toBeInTheDocument();
   });
 
   describe('filter state management', () => {
@@ -23,41 +25,29 @@ describe('Pipelines', () => {
       const api = createMockApi();
       render(<Pipelines />, { wrapper: createTestWrapper(api, { initialEntries: ['/pipelines'] }) });
 
-      const select = await screen.findByRole('combobox');
-      expect(select).toHaveValue('all');
+      const allButton = await screen.findByRole('button', { name: /all/i });
+      // Active tab has different styling - check for shadow-sm class which indicates selected state
+      expect(allButton).toHaveClass('shadow-sm');
     });
 
     it('can change filter to active', async () => {
       const api = createMockApi();
       render(<Pipelines />, { wrapper: createTestWrapper(api, { initialEntries: ['/pipelines'] }) });
 
-      const select = await screen.findByRole('combobox');
-      fireEvent.change(select, { target: { value: 'active' } });
+      const activeButton = await screen.findByRole('button', { name: /active/i });
+      fireEvent.click(activeButton);
 
-      expect(select).toHaveValue('active');
+      expect(activeButton).toHaveClass('shadow-sm');
     });
 
     it('can change filter to failed', async () => {
       const api = createMockApi();
       render(<Pipelines />, { wrapper: createTestWrapper(api, { initialEntries: ['/pipelines'] }) });
 
-      const select = await screen.findByRole('combobox');
-      fireEvent.change(select, { target: { value: 'failed' } });
+      const failedButton = await screen.findByRole('button', { name: /failed/i });
+      fireEvent.click(failedButton);
 
-      expect(select).toHaveValue('failed');
-    });
-
-    it('has all three filter options available', async () => {
-      const api = createMockApi();
-      render(<Pipelines />, { wrapper: createTestWrapper(api, { initialEntries: ['/pipelines'] }) });
-
-      const select = await screen.findByRole('combobox');
-      const options = select.querySelectorAll('option');
-
-      expect(options).toHaveLength(3);
-      expect(options[0]).toHaveValue('all');
-      expect(options[1]).toHaveValue('active');
-      expect(options[2]).toHaveValue('failed');
+      expect(failedButton).toHaveClass('shadow-sm');
     });
   });
 });
