@@ -38,7 +38,7 @@ describe('FileDropzone', () => {
     });
 
     await waitFor(() => {
-      expect(onUpload).toHaveBeenCalledWith([file]);
+      expect(onUpload).toHaveBeenCalledWith([file], null);
     });
   });
 
@@ -98,7 +98,7 @@ describe('FileDropzone', () => {
     });
 
     await waitFor(() => {
-      expect(onUpload).toHaveBeenCalledWith(files);
+      expect(onUpload).toHaveBeenCalledWith(files, null);
     });
   });
 

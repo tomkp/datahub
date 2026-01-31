@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, AlertCircle } from 'lucide-react';
 import { useToast } from './ui/Toast';
+import { UploadConfirmDialog } from './UploadConfirmDialog';
+import type { Pipeline } from '../lib/api';
 
 const ALLOWED_EXTENSIONS = [
   '.csv',
@@ -25,19 +27,26 @@ const ALLOWED_MIME_TYPES = [
 const DEFAULT_MAX_SIZE_MB = 500;
 
 interface FileDropzoneProps {
-  onUpload: (files: File[]) => void;
+  onUpload: (files: File[], pipelineId: string | null) => void;
   disabled?: boolean;
   maxSizeMB?: number;
+  pipelines?: Pipeline[];
+  requirePipeline?: boolean;
 }
 
 export function FileDropzone({
   onUpload,
   disabled = false,
   maxSizeMB = DEFAULT_MAX_SIZE_MB,
+  pipelines = [],
+  requirePipeline = false,
 }: FileDropzoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { error: showError } = useToast();
+
+  const showConfirmDialog = stagedFiles.length > 0;
 
   const isValidFileType = useCallback((file: File): boolean => {
     // Check MIME type
@@ -116,6 +125,29 @@ export function FileDropzone({
     setIsDragOver(false);
   }, []);
 
+  const stageFiles = useCallback(
+    (files: File[]) => {
+      if (pipelines.length > 0) {
+        setStagedFiles(files);
+      } else {
+        onUpload(files, null);
+      }
+    },
+    [pipelines.length, onUpload]
+  );
+
+  const handleConfirmUpload = useCallback(
+    (pipelineId: string | null) => {
+      onUpload(stagedFiles, pipelineId);
+      setStagedFiles([]);
+    },
+    [stagedFiles, onUpload]
+  );
+
+  const handleCancelUpload = useCallback(() => {
+    setStagedFiles([]);
+  }, []);
+
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -129,10 +161,10 @@ export function FileDropzone({
 
       const validFiles = validateFiles(files);
       if (validFiles.length > 0) {
-        onUpload(validFiles);
+        stageFiles(validFiles);
       }
     },
-    [disabled, validateFiles, onUpload]
+    [disabled, validateFiles, stageFiles]
   );
 
   const handleFileSelect = useCallback(
@@ -142,7 +174,7 @@ export function FileDropzone({
 
       const validFiles = validateFiles(files);
       if (validFiles.length > 0) {
-        onUpload(validFiles);
+        stageFiles(validFiles);
       }
 
       // Reset input
@@ -150,7 +182,7 @@ export function FileDropzone({
         fileInputRef.current.value = '';
       }
     },
-    [validateFiles, onUpload]
+    [validateFiles, stageFiles]
   );
 
   const handleClick = useCallback(() => {
@@ -238,6 +270,16 @@ export function FileDropzone({
           </>
         )}
       </div>
+
+      {showConfirmDialog && (
+        <UploadConfirmDialog
+          files={stagedFiles}
+          pipelines={pipelines}
+          onConfirm={handleConfirmUpload}
+          onCancel={handleCancelUpload}
+          requirePipeline={requirePipeline}
+        />
+      )}
     </div>
   );
 }

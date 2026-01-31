@@ -44,6 +44,7 @@ export interface Folder {
 export interface FileVersion {
   id: string;
   fileId: string;
+  pipelineId?: string | null;
   storageUrl: string;
   uploadedBy: string;
   uploadedAt: string;
@@ -130,8 +131,8 @@ export interface ApiClient {
   };
   files: {
     get: (id: string) => Promise<File>;
-    upload: (folderId: string, file: globalThis.File) => Promise<File>;
-    uploadVersion: (fileId: string, file: globalThis.File) => Promise<FileVersion>;
+    upload: (folderId: string, file: globalThis.File, pipelineId?: string) => Promise<File>;
+    uploadVersion: (fileId: string, file: globalThis.File, pipelineId?: string) => Promise<FileVersion>;
     delete: (id: string) => Promise<void>;
     getVersions: (fileId: string) => Promise<FileVersion[]>;
   };
@@ -194,9 +195,12 @@ export function createApiClient(baseUrl: string, token: string): ApiClient {
       headers,
     });
 
-  const uploadFile = <T>(path: string, file: globalThis.File) => {
+  const uploadFile = <T>(path: string, file: globalThis.File, pipelineId?: string) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (pipelineId) {
+      formData.append('pipelineId', pipelineId);
+    }
 
     return fetchJson<T>(`${baseUrl}${path}`, {
       method: 'POST',
@@ -233,8 +237,8 @@ export function createApiClient(baseUrl: string, token: string): ApiClient {
     },
     files: {
       get: (id) => get<File>(`/api/files/${id}`),
-      upload: (folderId, file) => uploadFile<File>(`/api/folders/${folderId}/files`, file),
-      uploadVersion: (fileId, file) => uploadFile<FileVersion>(`/api/files/${fileId}/versions`, file),
+      upload: (folderId, file, pipelineId) => uploadFile<File>(`/api/folders/${folderId}/files`, file, pipelineId),
+      uploadVersion: (fileId, file, pipelineId) => uploadFile<FileVersion>(`/api/files/${fileId}/versions`, file, pipelineId),
       delete: (id) => del(`/api/files/${id}`),
       getVersions: (fileId) => get<FileVersion[]>(`/api/files/${fileId}/versions`),
     },

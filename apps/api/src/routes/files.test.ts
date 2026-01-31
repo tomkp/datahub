@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { createDb, type DbConnection } from '../db';
 import { tenants, dataRooms, folders, files, fileVersions, pipelineRuns, pipelineRunSteps, pipelines, users } from '../db/schema';
+import { authMiddleware } from '../middleware/auth';
 import { filesRoutes } from './files';
 import { FileStorage } from '../services/storage';
 
@@ -80,6 +81,7 @@ describe('Files Routes', () => {
       CREATE TABLE file_versions (
         id TEXT PRIMARY KEY,
         file_id TEXT NOT NULL,
+        pipeline_id TEXT,
         storage_url TEXT NOT NULL,
         uploaded_by TEXT NOT NULL,
         uploaded_at TEXT NOT NULL,
@@ -177,9 +179,18 @@ describe('Files Routes', () => {
     conn.db.run('DELETE FROM pipelines');
     conn.db.run('DELETE FROM file_versions');
     conn.db.run('DELETE FROM files');
+    conn.db.run('DELETE FROM data_rooms WHERE id != \'room-1\'');
     app = new Hono();
     app.route('/api', filesRoutes(conn.db, storage));
   });
+
+  // Helper to create app with auth middleware for upload tests
+  function createAppWithAuth() {
+    const authApp = new Hono();
+    authApp.use('/api/*', authMiddleware(conn.db));
+    authApp.route('/api', filesRoutes(conn.db, storage));
+    return authApp;
+  }
 
   describe('GET /folders/:folderId/files', () => {
     it('returns latestVersion for each file', async () => {
@@ -411,6 +422,247 @@ describe('Files Routes', () => {
       expect(body.find((f: any) => f.name === 'test-0.pdf').pipelineStatus).toBe('processing');
       expect(body.find((f: any) => f.name === 'test-1.pdf').pipelineStatus).toBe('processed');
       expect(body.find((f: any) => f.name === 'test-2.pdf').pipelineStatus).toBe('errored');
+    });
+  });
+
+  describe('POST /folders/:folderId/files with pipeline selection', () => {
+    it('uploads file with selected pipeline and auto-triggers pipeline run', async () => {
+      const authApp = createAppWithAuth();
+      const now = new Date().toISOString();
+
+      // Create a pipeline
+      conn.db.insert(pipelines).values({
+        id: 'pipeline-1',
+        dataRoomId: 'room-1',
+        name: 'Test Pipeline',
+        steps: JSON.stringify(['malware_scan', 'data_validation']),
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Upload file with pipeline selection
+      const formData = new FormData();
+      formData.append('file', new Blob(['test content'], { type: 'text/plain' }), 'test.csv');
+      formData.append('pipelineId', 'pipeline-1');
+
+      const res = await authApp.request('/api/folders/folder-1/files', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: 'Bearer test-token',
+        },
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+
+      // Verify file was created
+      expect(body.name).toBe('test.csv');
+      expect(body.latestVersion).toBeDefined();
+      expect(body.latestVersion.pipelineId).toBe('pipeline-1');
+
+      // Verify pipeline run was created
+      expect(body.pipelineRun).toBeDefined();
+      expect(body.pipelineRun.pipelineId).toBe('pipeline-1');
+      expect(body.pipelineRun.status).toBe('processing');
+
+      // Verify pipeline run steps were created
+      const steps = conn.db.select().from(pipelineRunSteps).all();
+      expect(steps).toHaveLength(2);
+      expect(steps.map(s => s.step)).toEqual(['malware_scan', 'data_validation']);
+    });
+
+    it('uploads file without pipeline (backward compatibility)', async () => {
+      const authApp = createAppWithAuth();
+
+      const formData = new FormData();
+      formData.append('file', new Blob(['test content'], { type: 'text/plain' }), 'test.csv');
+
+      const res = await authApp.request('/api/folders/folder-1/files', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: 'Bearer test-token',
+        },
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+
+      expect(body.name).toBe('test.csv');
+      expect(body.latestVersion).toBeDefined();
+      expect(body.latestVersion.pipelineId).toBeNull();
+      expect(body.pipelineRun).toBeUndefined();
+    });
+
+    it('returns 400 when pipeline belongs to different data room', async () => {
+      const authApp = createAppWithAuth();
+      const now = new Date().toISOString();
+
+      // Create a second data room
+      conn.db.insert(dataRooms).values({
+        id: 'room-2',
+        tenantId: 'tenant-1',
+        name: 'Other Room',
+        storageUrl: '/data/room2',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create a pipeline in a different data room
+      conn.db.insert(pipelines).values({
+        id: 'pipeline-other',
+        dataRoomId: 'room-2',
+        name: 'Other Pipeline',
+        steps: JSON.stringify(['malware_scan']),
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      const formData = new FormData();
+      formData.append('file', new Blob(['test content'], { type: 'text/plain' }), 'test.csv');
+      formData.append('pipelineId', 'pipeline-other');
+
+      const res = await authApp.request('/api/folders/folder-1/files', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: 'Bearer test-token',
+        },
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('Invalid pipeline for this data room');
+    });
+
+    it('returns 400 when pipeline does not exist', async () => {
+      const authApp = createAppWithAuth();
+
+      const formData = new FormData();
+      formData.append('file', new Blob(['test content'], { type: 'text/plain' }), 'test.csv');
+      formData.append('pipelineId', 'non-existent-pipeline');
+
+      const res = await authApp.request('/api/folders/folder-1/files', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: 'Bearer test-token',
+        },
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('Invalid pipeline for this data room');
+    });
+  });
+
+  describe('POST /files/:fileId/versions with pipeline selection', () => {
+    it('uploads new version with selected pipeline and auto-triggers pipeline run', async () => {
+      const authApp = createAppWithAuth();
+      const now = new Date().toISOString();
+
+      // Create file without pipeline
+      conn.db.insert(files).values({
+        id: 'file-1',
+        dataRoomId: 'room-1',
+        folderId: 'folder-1',
+        name: 'test.csv',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      conn.db.insert(fileVersions).values({
+        id: 'version-1',
+        fileId: 'file-1',
+        pipelineId: null,
+        storageUrl: '/storage/v1',
+        uploadedBy: 'user-1',
+        uploadedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create a pipeline
+      conn.db.insert(pipelines).values({
+        id: 'pipeline-1',
+        dataRoomId: 'room-1',
+        name: 'Test Pipeline',
+        steps: JSON.stringify(['malware_scan']),
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Upload new version with pipeline
+      const formData = new FormData();
+      formData.append('file', new Blob(['new content'], { type: 'text/plain' }), 'test.csv');
+      formData.append('pipelineId', 'pipeline-1');
+
+      const res = await authApp.request('/api/files/file-1/versions', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: 'Bearer test-token',
+        },
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+
+      expect(body.pipelineId).toBe('pipeline-1');
+      expect(body.pipelineRun).toBeDefined();
+      expect(body.pipelineRun.status).toBe('processing');
+    });
+
+    it('returns 400 when pipeline belongs to different data room', async () => {
+      const authApp = createAppWithAuth();
+      const now = new Date().toISOString();
+
+      // Create file
+      conn.db.insert(files).values({
+        id: 'file-1',
+        dataRoomId: 'room-1',
+        folderId: 'folder-1',
+        name: 'test.csv',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create a second data room
+      conn.db.insert(dataRooms).values({
+        id: 'room-2',
+        tenantId: 'tenant-1',
+        name: 'Other Room',
+        storageUrl: '/data/room2',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create a pipeline in the other data room
+      conn.db.insert(pipelines).values({
+        id: 'pipeline-other',
+        dataRoomId: 'room-2',
+        name: 'Other Pipeline',
+        steps: JSON.stringify(['malware_scan']),
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      const formData = new FormData();
+      formData.append('file', new Blob(['new content'], { type: 'text/plain' }), 'test.csv');
+      formData.append('pipelineId', 'pipeline-other');
+
+      const res = await authApp.request('/api/files/file-1/versions', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: 'Bearer test-token',
+        },
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('Invalid pipeline for this data room');
     });
   });
 
