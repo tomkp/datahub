@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { eq } from 'drizzle-orm';
 import { createDb, type DbConnection } from '../db';
-import { tenants, dataRooms, pipelines, pipelineRuns, files, fileVersions, folders, users } from '../db/schema';
+import { tenants, dataRooms, pipelines, pipelineRuns, pipelineRunSteps, files, fileVersions, folders, users } from '../db/schema';
 import { dataRoomsRoutes } from './data-rooms';
 
 describe('Data Rooms Routes', () => {
@@ -90,6 +90,27 @@ describe('Data Rooms Routes', () => {
         pipeline_id TEXT NOT NULL,
         file_version_id TEXT NOT NULL,
         status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+    conn.db.run(`
+      CREATE TABLE pipeline_run_steps (
+        id TEXT PRIMARY KEY,
+        pipeline_run_id TEXT NOT NULL,
+        step TEXT NOT NULL,
+        status TEXT NOT NULL,
+        error_message TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+    conn.db.run(`
+      CREATE TABLE pipeline_run_expected_events (
+        pipeline_run_id TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        event_ref TEXT NOT NULL,
+        event_received_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -423,6 +444,105 @@ describe('Data Rooms Routes', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toEqual([]);
+    });
+  });
+
+  describe('DELETE /api/data-rooms/:id', () => {
+    it('cascades delete to folders, files, pipelines, and runs', async () => {
+      const now = new Date().toISOString();
+
+      // Create data room
+      conn.db.insert(dataRooms).values({
+        id: 'room-1',
+        tenantId: 'tenant-1',
+        name: 'Room 1',
+        storageUrl: '/data/room1',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create folder
+      conn.db.insert(folders).values({
+        id: 'folder-1',
+        dataRoomId: 'room-1',
+        name: 'Test Folder',
+        path: '/Test Folder',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create file
+      conn.db.insert(files).values({
+        id: 'file-1',
+        dataRoomId: 'room-1',
+        folderId: 'folder-1',
+        name: 'test.pdf',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create file version
+      conn.db.insert(fileVersions).values({
+        id: 'version-1',
+        fileId: 'file-1',
+        storageUrl: '/storage/v1',
+        uploadedBy: 'user-1',
+        uploadedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create pipeline
+      conn.db.insert(pipelines).values({
+        id: 'pipeline-1',
+        dataRoomId: 'room-1',
+        name: 'Test Pipeline',
+        steps: JSON.stringify(['step1']),
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create pipeline run
+      conn.db.insert(pipelineRuns).values({
+        id: 'run-1',
+        pipelineId: 'pipeline-1',
+        fileVersionId: 'version-1',
+        status: 'processing',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Create pipeline run step
+      conn.db.insert(pipelineRunSteps).values({
+        id: 'step-1',
+        pipelineRunId: 'run-1',
+        step: 'step1',
+        status: 'processing',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // Verify data exists
+      expect(conn.db.select().from(dataRooms).all()).toHaveLength(1);
+      expect(conn.db.select().from(folders).all()).toHaveLength(1);
+      expect(conn.db.select().from(files).all()).toHaveLength(1);
+      expect(conn.db.select().from(fileVersions).all()).toHaveLength(1);
+      expect(conn.db.select().from(pipelines).all()).toHaveLength(1);
+      expect(conn.db.select().from(pipelineRuns).all()).toHaveLength(1);
+      expect(conn.db.select().from(pipelineRunSteps).all()).toHaveLength(1);
+
+      // Delete data room
+      const res = await app.request('/api/data-rooms/room-1', { method: 'DELETE' });
+      expect(res.status).toBe(204);
+
+      // Verify cascade delete
+      expect(conn.db.select().from(dataRooms).all()).toHaveLength(0);
+      expect(conn.db.select().from(folders).all()).toHaveLength(0);
+      expect(conn.db.select().from(files).all()).toHaveLength(0);
+      expect(conn.db.select().from(fileVersions).all()).toHaveLength(0);
+      expect(conn.db.select().from(pipelines).all()).toHaveLength(0);
+      expect(conn.db.select().from(pipelineRuns).all()).toHaveLength(0);
+      expect(conn.db.select().from(pipelineRunSteps).all()).toHaveLength(0);
     });
   });
 });
