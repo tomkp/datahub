@@ -104,6 +104,7 @@ export interface ApiClient {
     update: (id: string, data: Partial<DataRoom>) => Promise<DataRoom>;
     delete: (id: string) => Promise<void>;
     getFolders: (roomId: string) => Promise<Folder[]>;
+    getPipelineRuns: (roomId: string, limit?: number) => Promise<PipelineRun[]>;
   };
   folders: {
     get: (id: string) => Promise<Folder>;
@@ -206,6 +207,7 @@ export function createApiClient(baseUrl: string, token: string): ApiClient {
       update: (id, data) => patch<DataRoom>(`/api/data-rooms/${id}`, data),
       delete: (id) => del(`/api/data-rooms/${id}`),
       getFolders: (roomId) => get<Folder[]>(`/api/data-rooms/${roomId}/folders`),
+      getPipelineRuns: (roomId, limit = 10) => get<PipelineRun[]>(`/api/data-rooms/${roomId}/pipeline-runs?limit=${limit}`),
     },
     folders: {
       get: (id) => get<Folder>(`/api/folders/${id}`),

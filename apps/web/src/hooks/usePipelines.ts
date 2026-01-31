@@ -115,3 +115,13 @@ export function usePipelineRunByFileVersion(fileVersionId: string | undefined) {
     enabled: !!fileVersionId,
   });
 }
+
+export function useDataRoomPipelineRuns(dataRoomId: string, limit = 10) {
+  const api = useApi();
+
+  return useQuery({
+    queryKey: ['dataRoomPipelineRuns', dataRoomId, limit],
+    queryFn: () => api.dataRooms.getPipelineRuns(dataRoomId, limit),
+    enabled: !!dataRoomId,
+  });
+}

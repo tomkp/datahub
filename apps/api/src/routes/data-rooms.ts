@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 import type { AppDatabase } from '../db';
-import { dataRooms } from '../db/schema';
+import { dataRooms, pipelines, pipelineRuns, fileVersions, files, folders } from '../db/schema';
 
 const createDataRoomSchema = z.object({
   tenantId: z.string().min(1),
@@ -108,6 +108,55 @@ export function dataRoomsRoutes(db: AppDatabase) {
     const id = c.req.param('id');
     db.delete(dataRooms).where(eq(dataRooms.id, id)).run();
     return c.body(null, 204);
+  });
+
+  // Get pipeline runs for a data room (across all pipelines)
+  app.get('/:id/pipeline-runs', (c) => {
+    const id = c.req.param('id');
+    const limitParam = c.req.query('limit');
+    const limit = limitParam ? parseInt(limitParam, 10) : 10;
+
+    // Check data room exists
+    const dataRoom = db.select().from(dataRooms).where(eq(dataRooms.id, id)).get();
+    if (!dataRoom) {
+      return c.json({ error: 'Data room not found' }, 404);
+    }
+
+    // Get all pipelines for this data room
+    const roomPipelines = db.select().from(pipelines).where(eq(pipelines.dataRoomId, id)).all();
+    if (roomPipelines.length === 0) {
+      return c.json([]);
+    }
+
+    const pipelineIds = roomPipelines.map((p) => p.id);
+
+    // Get pipeline runs for all pipelines, sorted by createdAt desc
+    const runs = db
+      .select()
+      .from(pipelineRuns)
+      .where(inArray(pipelineRuns.pipelineId, pipelineIds))
+      .orderBy(desc(pipelineRuns.createdAt))
+      .limit(limit)
+      .all();
+
+    // Enrich runs with file and folder information
+    const enrichedRuns = runs.map((run) => {
+      const version = db.select().from(fileVersions).where(eq(fileVersions.id, run.fileVersionId)).get();
+      if (version) {
+        const file = db.select().from(files).where(eq(files.id, version.fileId)).get();
+        const folder = file ? db.select().from(folders).where(eq(folders.id, file.folderId)).get() : null;
+        return {
+          ...run,
+          fileId: file?.id,
+          fileName: file?.name,
+          folderId: folder?.id,
+          folderName: folder?.name,
+        };
+      }
+      return run;
+    });
+
+    return c.json(enrichedRuns);
   });
 
   return app;
