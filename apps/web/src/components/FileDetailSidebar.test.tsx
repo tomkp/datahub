@@ -222,6 +222,18 @@ describe('FileDetailSidebar', () => {
     api.files.getVersions = vi.fn().mockResolvedValue(mockVersions);
     api.pipelineRuns.getByFileVersion = vi.fn().mockResolvedValue(null);
 
+    const mockBlob = new Blob(['test content'], { type: 'application/octet-stream' });
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: () => Promise.resolve(mockBlob),
+    });
+    global.fetch = mockFetch;
+
+    const mockCreateObjectURL = vi.fn().mockReturnValue('blob:test-url');
+    const mockRevokeObjectURL = vi.fn();
+    URL.createObjectURL = mockCreateObjectURL;
+    URL.revokeObjectURL = mockRevokeObjectURL;
+
     render(<FileDetailSidebar fileId="file-1" onClose={() => {}} />, {
       wrapper: createWrapper(api),
     });
@@ -231,9 +243,9 @@ describe('FileDetailSidebar', () => {
     fireEvent.click(mainDownloadButton!);
 
     await waitFor(() => {
-      expect(mockWindowOpen).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3001/api/file-versions/version-2/download',
-        '_blank'
+        { headers: { Authorization: 'Bearer test-token' } }
       );
     });
   });

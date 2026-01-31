@@ -77,12 +77,32 @@ export function FileDetailSidebar({ fileId, onClose }: FileDetailSidebarProps) {
     }
   }, [fileId, showSuccess, showError]);
 
+  const downloadVersion = useCallback(async (versionId: string, filename: string) => {
+    try {
+      const response = await fetch(`${api.baseUrl}/api/file-versions/${versionId}/download`, {
+        headers: { Authorization: `Bearer ${api.token}` },
+      });
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      showError('Failed to download file');
+    }
+  }, [api.baseUrl, api.token, showError]);
+
   const handleDownload = useCallback(() => {
-    if (!versions?.length) return;
-    const latestVersion = versions[0];
-    const downloadUrl = `${api.baseUrl}/api/file-versions/${latestVersion.id}/download`;
-    window.open(downloadUrl, '_blank');
-  }, [versions, api.baseUrl]);
+    if (!versions?.length || !file) return;
+    downloadVersion(versions[0].id, file.name);
+  }, [versions, file, downloadVersion]);
 
   if (isLoading) {
     return (
@@ -221,14 +241,16 @@ export function FileDetailSidebar({ fileId, onClose }: FileDetailSidebarProps) {
                         )}
                         <VersionStatusBadge versionId={version.id} />
                       </div>
-                      <a
-                        href={`${api.baseUrl}/api/file-versions/${version.id}/download`}
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          downloadVersion(version.id, file.name);
+                        }}
                         className="p-1 rounded hover:bg-muted/50"
                         title="Download"
                       >
                         <Download className="h-3.5 w-3.5 text-muted-foreground" />
-                      </a>
+                      </button>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
