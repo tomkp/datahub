@@ -284,7 +284,7 @@ export function DataRoomDetail() {
 
         {/* Right sidebar - File details */}
         {selectedFileId && (
-          <div className="w-80 border-l border-border overflow-y-auto">
+          <div className="w-100 border-l border-border overflow-y-auto">
             <FileDetailSidebar
               fileId={selectedFileId}
               onClose={handleCloseFile}

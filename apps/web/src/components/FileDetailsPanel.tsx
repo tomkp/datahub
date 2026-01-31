@@ -52,7 +52,7 @@ export function FileDetailsPanel({ file, versionCount, onClose }: FileDetailsPan
     <aside
       role="complementary"
       aria-label="File details"
-      className="w-80 border-l border-border bg-background flex flex-col h-full"
+      className="w-100 border-l border-border bg-background flex flex-col h-full"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
