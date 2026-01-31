@@ -1,10 +1,16 @@
-import { File as FileIcon, FileText, FileImage, FileCode, MoreHorizontal, FilterX, Check, Loader2, AlertCircle } from 'lucide-react';
+import { File as FileIcon, FileText, FileImage, FileCode, MoreHorizontal, FilterX, Check, Loader2, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { useFiles } from '../hooks/useFiles';
 import { type File as FileType } from '../lib/api';
 import { cn } from '../lib/utils';
 import { applyFileFilters, type FileFilterState } from './FileFilters';
 import { FileTypeBadge } from './FileTypeBadge';
 import { QueryError } from './ui';
+
+const sortColumns = ['name', 'type', 'status', 'modified'] as const;
+type SortColumn = typeof sortColumns[number];
+const sortDirections = ['asc', 'desc'] as const;
+type SortDirection = typeof sortDirections[number];
 
 function PipelineStatusIcon({ status }: { status?: 'processing' | 'processed' | 'errored' }) {
   if (!status) return null;
@@ -76,8 +82,82 @@ function LoadingSkeleton() {
   );
 }
 
+function getFileExtension(filename: string): string {
+  return filename.split('.').pop()?.toLowerCase() || '';
+}
+
+function sortFiles(files: FileType[], sortBy: SortColumn, sortDir: SortDirection): FileType[] {
+  const sorted = [...files].sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy) {
+      case 'name':
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case 'type':
+        comparison = getFileExtension(a.name).localeCompare(getFileExtension(b.name));
+        break;
+      case 'status': {
+        const statusOrder = { processed: 0, processing: 1, errored: 2 };
+        const aOrder = a.pipelineStatus ? statusOrder[a.pipelineStatus] ?? 3 : 3;
+        const bOrder = b.pipelineStatus ? statusOrder[b.pipelineStatus] ?? 3 : 3;
+        comparison = aOrder - bOrder;
+        break;
+      }
+      case 'modified':
+        comparison = (a.updatedAt || '').localeCompare(b.updatedAt || '');
+        break;
+    }
+    return sortDir === 'asc' ? comparison : -comparison;
+  });
+  return sorted;
+}
+
+interface SortableHeaderProps {
+  column: SortColumn;
+  label: string;
+  currentSort: SortColumn | null;
+  currentDir: SortDirection;
+  onSort: (column: SortColumn) => void;
+  className?: string;
+  align?: 'left' | 'center';
+}
+
+function SortableHeader({ column, label, currentSort, currentDir, onSort, className, align = 'left' }: SortableHeaderProps) {
+  const isActive = currentSort === column;
+  return (
+    <th
+      className={cn(
+        'text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide cursor-pointer hover:text-foreground select-none',
+        align === 'center' ? 'text-center' : 'text-left',
+        className
+      )}
+      onClick={() => onSort(column)}
+    >
+      <span className={cn('inline-flex items-center gap-1', align === 'center' && 'justify-center')}>
+        {label}
+        {isActive && (
+          currentDir === 'asc'
+            ? <ArrowUp className="h-3 w-3" />
+            : <ArrowDown className="h-3 w-3" />
+        )}
+      </span>
+    </th>
+  );
+}
+
 export function FileList({ folderId, filters, onClearFilters, selectedFileId, onSelectFile }: FileListProps) {
   const { data: files, isLoading, isError, error, refetch } = useFiles(folderId);
+  const [sortBy, setSortBy] = useQueryState('sortBy', parseAsStringLiteral(sortColumns));
+  const [sortDir, setSortDir] = useQueryState('sortDir', parseAsStringLiteral(sortDirections).withDefault('asc'));
+
+  const handleSort = (column: SortColumn) => {
+    if (sortBy === column) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDir('asc');
+    }
+  };
 
   if (!folderId) {
     return null;
@@ -127,25 +207,17 @@ export function FileList({ folderId, filters, onClearFilters, selectedFileId, on
     );
   }
 
-  const displayFiles = filteredFiles;
+  const displayFiles = sortBy ? sortFiles(filteredFiles, sortBy, sortDir) : filteredFiles;
 
   return (
     <div data-testid="file-list" className="border border-border rounded overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-surface-1 border-b border-border">
-            <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide">
-              Name
-            </th>
-            <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-20">
-              Type
-            </th>
-            <th className="text-center text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-16">
-              Status
-            </th>
-            <th className="text-left text-[11px] font-medium text-muted-foreground px-3 py-2 uppercase tracking-wide w-28">
-              Modified
-            </th>
+            <SortableHeader column="name" label="Name" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} />
+            <SortableHeader column="type" label="Type" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="w-20" />
+            <SortableHeader column="status" label="Status" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="w-16" align="center" />
+            <SortableHeader column="modified" label="Modified" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="w-28" />
             <th className="w-8" />
           </tr>
         </thead>

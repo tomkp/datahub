@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
+import { NuqsAdapter } from 'nuqs/adapters/react-router/v6';
 import { ApiContext, type ApiClient } from '../lib/api';
 import { FileList } from './FileList';
 
@@ -63,9 +64,11 @@ const createWrapper = (api: ApiClient) => {
   });
   return ({ children }: { children: React.ReactNode }) => (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <ApiContext.Provider value={api}>
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-      </ApiContext.Provider>
+      <NuqsAdapter>
+        <ApiContext.Provider value={api}>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </ApiContext.Provider>
+      </NuqsAdapter>
     </BrowserRouter>
   );
 };

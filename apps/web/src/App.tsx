@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NuqsAdapter } from 'nuqs/adapters/react-router/v6';
 import { Database, LayoutDashboard, GitBranch, Settings } from 'lucide-react';
 import { ApiContext, createApiClient } from './lib/api';
 import { Dashboard, DataRooms, DataRoomDetail, FileDetail, Pipelines } from './pages';
@@ -103,18 +104,20 @@ export function App() {
       <ApiContext.Provider value={apiClient}>
         <ToastProvider>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Layout>
-              <ErrorBoundary>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/data-rooms" element={<DataRooms />} />
-                  <Route path="/data-rooms/:id" element={<DataRoomDetail />} />
-                  <Route path="/files/:id" element={<FileDetail />} />
-                  <Route path="/pipelines" element={<Pipelines />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                </Routes>
-              </ErrorBoundary>
-            </Layout>
+            <NuqsAdapter>
+              <Layout>
+                <ErrorBoundary>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/data-rooms" element={<DataRooms />} />
+                    <Route path="/data-rooms/:id" element={<DataRoomDetail />} />
+                    <Route path="/files/:id" element={<FileDetail />} />
+                    <Route path="/pipelines" element={<Pipelines />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                  </Routes>
+                </ErrorBoundary>
+              </Layout>
+            </NuqsAdapter>
           </BrowserRouter>
         </ToastProvider>
       </ApiContext.Provider>
