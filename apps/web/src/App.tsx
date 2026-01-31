@@ -6,6 +6,7 @@ import { Dashboard, DataRooms, DataRoomDetail, FileDetail, Pipelines } from './p
 import { cn } from './lib/utils';
 import { ThemeToggle } from './components/ThemeToggle';
 import { ToastProvider } from './components/ui/Toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -103,14 +104,16 @@ export function App() {
         <ToastProvider>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Layout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/data-rooms" element={<DataRooms />} />
-                <Route path="/data-rooms/:id" element={<DataRoomDetail />} />
-                <Route path="/files/:id" element={<FileDetail />} />
-                <Route path="/pipelines" element={<Pipelines />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/data-rooms" element={<DataRooms />} />
+                  <Route path="/data-rooms/:id" element={<DataRoomDetail />} />
+                  <Route path="/files/:id" element={<FileDetail />} />
+                  <Route path="/pipelines" element={<Pipelines />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Routes>
+              </ErrorBoundary>
             </Layout>
           </BrowserRouter>
         </ToastProvider>
