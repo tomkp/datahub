@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { AppDatabase } from './db';
 import { authMiddleware, getUser } from './middleware/auth';
+import { securityHeadersMiddleware } from './middleware/security-headers';
 import { FileStorage } from './services/storage';
 import {
   tenantsRoutes,
@@ -29,6 +30,7 @@ export function createApp({ db, storage }: AppConfig) {
   const app = new Hono();
 
   // Middleware
+  app.use('*', securityHeadersMiddleware());
   app.use('*', cors());
 
   // Health check (public)
