@@ -2,10 +2,52 @@ import { Hono } from 'hono';
 import { eq, desc, inArray } from 'drizzle-orm';
 import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
-import { files, fileVersions, folders, pipelineRuns } from '../db/schema';
+import { files, fileVersions, folders, pipelineRuns, pipelineRunSteps, pipelines } from '../db/schema';
 import { FileStorage } from '../services/storage';
 import { getUser } from '../middleware/auth';
 import { CascadeDeletionService } from '../services/cascade-deletion';
+
+function triggerPipelineRun(
+  db: AppDatabase,
+  pipelineId: string,
+  fileVersionId: string
+): { id: string; pipelineId: string; fileVersionId: string; status: 'processing' } {
+  const pipeline = db.select().from(pipelines).where(eq(pipelines.id, pipelineId)).get();
+  if (!pipeline) {
+    throw new Error('Pipeline not found');
+  }
+
+  const id = crypto.randomUUID();
+  const now = nowISO();
+
+  const run = {
+    id,
+    pipelineId,
+    fileVersionId,
+    status: 'processing' as const,
+    createdAt: now,
+    updatedAt: now,
+  };
+  db.insert(pipelineRuns).values(run).run();
+
+  const steps = typeof pipeline.steps === 'string'
+    ? JSON.parse(pipeline.steps)
+    : pipeline.steps;
+
+  for (const step of steps as string[]) {
+    const stepId = crypto.randomUUID();
+    db.insert(pipelineRunSteps).values({
+      id: stepId,
+      pipelineRunId: id,
+      step,
+      status: 'processing',
+      createdAt: now,
+      updatedAt: now,
+    }).run();
+  }
+
+  return { id, pipelineId, fileVersionId, status: 'processing' };
+}
 
 export function filesRoutes(db: AppDatabase, storage: FileStorage) {
   const app = new Hono();
@@ -79,9 +121,18 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
 
     const formData = await c.req.formData();
     const uploadedFile = formData.get('file');
+    const pipelineId = formData.get('pipelineId') as string | null;
 
     if (!uploadedFile || !(uploadedFile instanceof File)) {
       return c.json({ error: 'No file provided' }, 400);
+    }
+
+    // Validate pipeline belongs to same data room (if provided)
+    if (pipelineId) {
+      const pipeline = db.select().from(pipelines).where(eq(pipelines.id, pipelineId)).get();
+      if (!pipeline || pipeline.dataRoomId !== folder.dataRoomId) {
+        return c.json({ error: 'Invalid pipeline for this data room' }, 400);
+      }
     }
 
     const fileId = crypto.randomUUID();
@@ -109,10 +160,11 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
     };
     db.insert(files).values(file).run();
 
-    // Create file version record
+    // Create file version record with pipelineId
     const version = {
       id: versionId,
       fileId,
+      pipelineId: pipelineId || null,
       storageUrl: storagePath,
       uploadedBy: user.id,
       uploadedAt: now,
@@ -121,7 +173,13 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
     };
     db.insert(fileVersions).values(version).run();
 
-    return c.json({ ...file, latestVersion: version }, 201);
+    // Auto-trigger pipeline run if pipelineId provided
+    let pipelineRun: ReturnType<typeof triggerPipelineRun> | undefined;
+    if (pipelineId) {
+      pipelineRun = triggerPipelineRun(db, pipelineId, versionId);
+    }
+
+    return c.json({ ...file, latestVersion: version, pipelineRun }, 201);
   });
 
   // Get file by ID (with versions)
@@ -155,9 +213,18 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
 
     const formData = await c.req.formData();
     const uploadedFile = formData.get('file');
+    const pipelineId = formData.get('pipelineId') as string | null;
 
     if (!uploadedFile || !(uploadedFile instanceof File)) {
       return c.json({ error: 'No file provided' }, 400);
+    }
+
+    // Validate pipeline belongs to same data room (if provided)
+    if (pipelineId) {
+      const pipeline = db.select().from(pipelines).where(eq(pipelines.id, pipelineId)).get();
+      if (!pipeline || pipeline.dataRoomId !== file.dataRoomId) {
+        return c.json({ error: 'Invalid pipeline for this data room' }, 400);
+      }
     }
 
     const versionId = crypto.randomUUID();
@@ -173,10 +240,11 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
       content
     );
 
-    // Create file version record
+    // Create file version record with pipelineId
     const version = {
       id: versionId,
       fileId,
+      pipelineId: pipelineId || null,
       storageUrl: storagePath,
       uploadedBy: user.id,
       uploadedAt: now,
@@ -188,7 +256,13 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
     // Update file timestamp
     db.update(files).set({ updatedAt: now }).where(eq(files.id, fileId)).run();
 
-    return c.json(version, 201);
+    // Auto-trigger pipeline run if pipelineId provided
+    let pipelineRun: ReturnType<typeof triggerPipelineRun> | undefined;
+    if (pipelineId) {
+      pipelineRun = triggerPipelineRun(db, pipelineId, versionId);
+    }
+
+    return c.json({ ...version, pipelineRun }, 201);
   });
 
   // Delete file

@@ -109,6 +109,7 @@ export const fileSchema = z.object({
 export const fileVersionSchema = z.object({
   id: z.string().uuid(),
   fileId: z.string().uuid(),
+  pipelineId: z.string().uuid().nullable().optional(),
   storageUrl: z.string(),
   uploadedBy: z.string().uuid(),
   uploadedAt: z.string().datetime(),

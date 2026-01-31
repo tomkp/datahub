@@ -6,6 +6,7 @@ import { useDataRoom } from '../hooks/useDataRooms';
 import { useCreateFolder } from '../hooks/useFolders';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useFileUpload } from '../hooks/useFileUpload';
+import { usePipelines } from '../hooks/usePipelines';
 import { FileTree } from '../components/FileTree';
 import { FileList } from '../components/FileList';
 import { FileDropzone } from '../components/FileDropzone';
@@ -58,6 +59,7 @@ export function DataRoomDetail() {
 
   const createFolderMutation = useCreateFolder();
   const { uploads, uploadFiles, clearCompleted } = useFileUpload(selectedFolderId);
+  const { data: pipelines } = usePipelines(id!);
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,12 +81,12 @@ export function DataRoomDetail() {
     }
   };
 
-  const handleFilesUpload = async (files: File[]) => {
+  const handleFilesUpload = async (files: File[], pipelineId: string | null) => {
     if (!selectedFolderId) {
       showError('Please select a folder first');
       return;
     }
-    await uploadFiles(files);
+    await uploadFiles(files, pipelineId);
     const completedCount = files.length;
     if (completedCount > 0) {
       showSuccess(
@@ -204,6 +206,8 @@ export function DataRoomDetail() {
               <FileDropzone
                 onUpload={handleFilesUpload}
                 disabled={!selectedFolderId}
+                pipelines={pipelines || []}
+                requirePipeline={false}
               />
 
               {/* Upload Progress */}

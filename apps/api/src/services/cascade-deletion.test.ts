@@ -57,6 +57,7 @@ describe('CascadeDeletionService', () => {
       CREATE TABLE file_versions (
         id TEXT PRIMARY KEY,
         file_id TEXT NOT NULL,
+        pipeline_id TEXT,
         storage_url TEXT NOT NULL,
         uploaded_by TEXT NOT NULL,
         uploaded_at TEXT NOT NULL,

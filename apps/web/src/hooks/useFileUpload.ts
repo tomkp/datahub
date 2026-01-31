@@ -23,7 +23,7 @@ export function useFileUpload(folderId: string) {
   }, []);
 
   const uploadFile = useCallback(
-    async (file: File): Promise<void> => {
+    async (file: File, pipelineId: string | null): Promise<void> => {
       const uploadId = crypto.randomUUID();
 
       setUploads((prev) => [
@@ -42,6 +42,9 @@ export function useFileUpload(folderId: string) {
           const xhr = new window.XMLHttpRequest();
           const formData = new FormData();
           formData.append('file', file);
+          if (pipelineId) {
+            formData.append('pipelineId', pipelineId);
+          }
 
           xhr.upload.addEventListener('progress', (event) => {
             if (event.lengthComputable) {
@@ -91,10 +94,10 @@ export function useFileUpload(folderId: string) {
   );
 
   const uploadFiles = useCallback(
-    async (files: File[]) => {
+    async (files: File[], pipelineId: string | null = null) => {
       // Upload files sequentially to avoid overwhelming the server
       for (const file of files) {
-        await uploadFile(file);
+        await uploadFile(file, pipelineId);
       }
     },
     [uploadFile]

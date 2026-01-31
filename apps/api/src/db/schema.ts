@@ -57,6 +57,7 @@ export const files = sqliteTable('files', {
 export const fileVersions = sqliteTable('file_versions', {
   id: text('id').primaryKey(),
   fileId: text('file_id').notNull().references(() => files.id),
+  pipelineId: text('pipeline_id').references(() => pipelines.id),
   storageUrl: text('storage_url').notNull(),
   uploadedBy: text('uploaded_by').notNull().references(() => users.id),
   uploadedAt: text('uploaded_at').notNull().$defaultFn(() => new Date().toISOString()),
