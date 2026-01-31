@@ -36,13 +36,16 @@ export function pipelinesRoutes(db: AppDatabase) {
     }
 
     const id = crypto.randomUUID();
+    const now = new Date().toISOString();
 
     const pipeline = {
       id,
       dataRoomId: roomId,
+      name: parsed.data.datasetKind, // Default name to datasetKind
       datasetKind: parsed.data.datasetKind,
       steps: parsed.data.steps,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
 
     db.insert(pipelines).values(pipeline).run();
@@ -174,7 +177,9 @@ export function pipelinesRoutes(db: AppDatabase) {
 
     // Create initial step records
     for (const step of pipeline.steps as string[]) {
+      const stepId = crypto.randomUUID();
       db.insert(pipelineRunSteps).values({
+        id: stepId,
         pipelineRunId: id,
         step,
         status: 'processing',
