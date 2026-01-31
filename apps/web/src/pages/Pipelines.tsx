@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GitBranch, ChevronRight, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { useDataRooms } from '../hooks/useDataRooms';
 import { usePipelines, useDataRoomPipelineRuns } from '../hooks/usePipelines';
 import { QueryError } from '../components/ui';
@@ -9,6 +9,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import type { Pipeline, PipelineRun, DataRoom } from '../lib/api';
 
 const DEFAULT_RUNS_LIMIT = 10;
+const filterValues = ['all', 'active', 'failed'] as const;
 
 function formatDate(dateString?: string) {
   if (!dateString) return '-';
@@ -161,7 +162,7 @@ function DataRoomSection({ dataRoom, runsLimit }: { dataRoom: DataRoom; runsLimi
 
 export function Pipelines() {
   const { data: dataRooms, isLoading, isError, error, refetch } = useDataRooms();
-  const [filter, setFilter] = useState<'all' | 'active' | 'failed'>('all');
+  const [filter, setFilter] = useQueryState('filter', parseAsStringLiteral(filterValues).withDefault('all'));
   const runsLimit = DEFAULT_RUNS_LIMIT;
 
   useDocumentTitle('Pipelines');

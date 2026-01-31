@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { useQueryState, parseAsBoolean } from 'nuqs';
 import { DataRoomList } from '../components/DataRoomList';
 import { useCreateDataRoom } from '../hooks/useDataRooms';
 
 export function DataRooms() {
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useQueryState('create', parseAsBoolean.withDefault(false));
   const [name, setName] = useState('');
   const createMutation = useCreateDataRoom();
 
