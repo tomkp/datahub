@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
-import { eq, desc, and, inArray } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 import type { AppDatabase } from '../db';
-import { files, fileVersions, folders, pipelineRuns, pipelineRunSteps, pipelineRunExpectedEvents } from '../db/schema';
+import { files, fileVersions, folders, pipelineRuns } from '../db/schema';
 import { FileStorage } from '../services/storage';
 import { getUser } from '../middleware/auth';
+import { CascadeDeletionService } from '../services/cascade-deletion';
 
 export function filesRoutes(db: AppDatabase, storage: FileStorage) {
   const app = new Hono();
@@ -192,31 +193,8 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
   // Delete file
   app.delete('/files/:id', (c) => {
     const id = c.req.param('id');
-
-    // Get all file versions
-    const versions = db.select().from(fileVersions).where(eq(fileVersions.fileId, id)).all();
-    const versionIds = versions.map(v => v.id);
-
-    if (versionIds.length > 0) {
-      // Get all pipeline runs for these versions
-      const runs = db.select().from(pipelineRuns).where(inArray(pipelineRuns.fileVersionId, versionIds)).all();
-      const runIds = runs.map(r => r.id);
-
-      // Delete pipeline run steps and expected events
-      if (runIds.length > 0) {
-        db.delete(pipelineRunExpectedEvents).where(inArray(pipelineRunExpectedEvents.pipelineRunId, runIds)).run();
-        db.delete(pipelineRunSteps).where(inArray(pipelineRunSteps.pipelineRunId, runIds)).run();
-      }
-
-      // Delete pipeline runs
-      db.delete(pipelineRuns).where(inArray(pipelineRuns.fileVersionId, versionIds)).run();
-    }
-
-    // Delete file versions
-    db.delete(fileVersions).where(eq(fileVersions.fileId, id)).run();
-
-    // Delete file
-    db.delete(files).where(eq(files.id, id)).run();
+    const cascadeService = new CascadeDeletionService(db);
+    cascadeService.deleteFile(id);
     return c.body(null, 204);
   });
 
