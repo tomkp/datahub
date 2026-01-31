@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
+import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { users } from '../db/schema';
 
@@ -40,7 +41,7 @@ export function usersRoutes(db: AppDatabase) {
       name: parsed.data.name,
       email: parsed.data.email,
       tokenId,
-      createdAt: new Date().toISOString(),
+      createdAt: nowISO(),
     };
 
     db.insert(users).values(user).run();

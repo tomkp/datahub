@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { pipelines, pipelineRuns, pipelineRunSteps } from '../db/schema';
 import { JobQueue } from './queue';
@@ -45,7 +46,7 @@ export class PipelineProcessor {
   }
 
   async startPipelineRun(pipelineId: string, fileVersionId: string): Promise<string> {
-    const now = new Date().toISOString();
+    const now = nowISO();
     const runId = crypto.randomUUID();
 
     // Create pipeline run record
@@ -118,7 +119,7 @@ export class PipelineProcessor {
     }
 
     // Update run status
-    const now = new Date().toISOString();
+    const now = nowISO();
     this.db.update(pipelineRuns)
       .set({
         status: hasError ? 'errored' : 'processed',
@@ -134,7 +135,7 @@ export class PipelineProcessor {
     status: 'processing' | 'processed' | 'errored' | 'warned',
     errorMessage?: string
   ): void {
-    const now = new Date().toISOString();
+    const now = nowISO();
     const stepRecord = this.db.select()
       .from(pipelineRunSteps)
       .all()
@@ -163,7 +164,7 @@ export class PipelineProcessor {
       throw new Error(`Pipeline ${run.pipelineId} not found`);
     }
 
-    const now = new Date().toISOString();
+    const now = nowISO();
     // Handle both JSON string and parsed array (depends on how table was created)
     const steps = typeof pipeline.steps === 'string'
       ? JSON.parse(pipeline.steps) as string[]

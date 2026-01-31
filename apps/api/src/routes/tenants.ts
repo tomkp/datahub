@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
+import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { tenants } from '../db/schema';
 
@@ -31,7 +32,7 @@ export function tenantsRoutes(db: AppDatabase) {
     }
 
     const id = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = nowISO();
 
     const tenant = {
       id,
@@ -75,7 +76,7 @@ export function tenantsRoutes(db: AppDatabase) {
     const updated = {
       ...existing,
       ...parsed.data,
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowISO(),
     };
 
     db.update(tenants).set(updated).where(eq(tenants.id, id)).run();

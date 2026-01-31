@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
+import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { folders } from '../db/schema';
 import { CascadeDeletionService } from '../services/cascade-deletion';
@@ -36,7 +37,7 @@ export function foldersRoutes(db: AppDatabase) {
     }
 
     const id = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = nowISO();
 
     // Build path
     let path = parsed.data.name.toLowerCase().replace(/\s+/g, '_');
@@ -92,7 +93,7 @@ export function foldersRoutes(db: AppDatabase) {
     const updated = {
       ...existing,
       ...parsed.data,
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowISO(),
     };
 
     db.update(folders).set(updated).where(eq(folders.id, id)).run();
