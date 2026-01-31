@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { Hono } from 'hono';
+import { eq } from 'drizzle-orm';
 import { createDb, type DbConnection } from '../db';
 import { tenants, dataRooms, pipelines, pipelineRuns, files, fileVersions, folders, users } from '../db/schema';
 import { dataRoomsRoutes } from './data-rooms';
@@ -142,6 +143,10 @@ describe('Data Rooms Routes', () => {
   });
 
   describe('POST /api/data-rooms', () => {
+    beforeEach(() => {
+      conn.db.run('DELETE FROM folders');
+    });
+
     it('creates a new data room', async () => {
       const res = await app.request('/api/data-rooms', {
         method: 'POST',
@@ -156,6 +161,27 @@ describe('Data Rooms Routes', () => {
       const body = await res.json();
       expect(body.name).toBe('New Room');
       expect(body.storageUrl).toBeDefined();
+    });
+
+    it('creates a root folder named after the data room', async () => {
+      const res = await app.request('/api/data-rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: 'tenant-1',
+          name: 'Liberty Mutual',
+          description: 'Insurance data room',
+        }),
+      });
+      expect(res.status).toBe(201);
+      const body = await res.json();
+
+      // Verify root folder was created with the data room's name
+      const rootFolder = conn.db.select().from(folders).where(eq(folders.dataRoomId, body.id)).get();
+      expect(rootFolder).toBeDefined();
+      expect(rootFolder!.name).toBe('Liberty Mutual');
+      expect(rootFolder!.parentId).toBeNull();
+      expect(rootFolder!.path).toBe('/');
     });
   });
 
@@ -195,6 +221,41 @@ describe('Data Rooms Routes', () => {
 
       const res = await app.request('/api/data-rooms/room-1', { method: 'DELETE' });
       expect(res.status).toBe(204);
+    });
+  });
+
+  describe('PATCH /api/data-rooms/:id', () => {
+    beforeEach(() => {
+      conn.db.run('DELETE FROM folders');
+    });
+
+    it('updates root folder name when data room name changes', async () => {
+      // Create data room with root folder
+      const createRes = await app.request('/api/data-rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: 'tenant-1',
+          name: 'Original Name',
+        }),
+      });
+      const created = await createRes.json();
+
+      // Verify initial root folder name
+      let rootFolder = conn.db.select().from(folders).where(eq(folders.id, `${created.id}-root`)).get();
+      expect(rootFolder!.name).toBe('Original Name');
+
+      // Update data room name
+      const updateRes = await app.request(`/api/data-rooms/${created.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'New Name' }),
+      });
+      expect(updateRes.status).toBe(200);
+
+      // Verify root folder name was updated
+      rootFolder = conn.db.select().from(folders).where(eq(folders.id, `${created.id}-root`)).get();
+      expect(rootFolder!.name).toBe('New Name');
     });
   });
 

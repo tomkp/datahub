@@ -182,9 +182,10 @@ const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 const dataTypes = ['Premium Bordereaux', 'Claims Bordereaux', 'Loss Runs', 'Exposure Data', 'Treaty Statements'];
 
 for (const roomId of cedantRooms) {
-  // Root folder
+  // Root folder (named after the data room)
   const rootId = `${roomId}-root`;
-  folders.push({ id: rootId, dataRoomId: roomId, parentId: null, name: 'Root', path: '/' });
+  const room = dataRooms.find((r) => r.id === roomId)!;
+  folders.push({ id: rootId, dataRoomId: roomId, parentId: null, name: room.name, path: '/' });
 
   for (const year of years) {
     const yearId = `${roomId}-${year}`;
@@ -218,7 +219,8 @@ const modelTypes = ['Hurricane Models', 'Earthquake Models', 'Flood Models', 'Wi
 
 for (const roomId of modelingRooms) {
   const rootId = `${roomId}-root`;
-  folders.push({ id: rootId, dataRoomId: roomId, parentId: null, name: 'Root', path: '/' });
+  const room = dataRooms.find((r) => r.id === roomId)!;
+  folders.push({ id: rootId, dataRoomId: roomId, parentId: null, name: room.name, path: '/' });
 
   for (const year of ['2024', '2025']) {
     const yearId = `${roomId}-${year}`;
@@ -239,7 +241,8 @@ for (const roomId of modelingRooms) {
 
 // Milliman folders
 const millimanRoot = 'milliman-root';
-folders.push({ id: millimanRoot, dataRoomId: 'milliman', parentId: null, name: 'Root', path: '/' });
+const millimanRoom = dataRooms.find((r) => r.id === 'milliman')!;
+folders.push({ id: millimanRoot, dataRoomId: 'milliman', parentId: null, name: millimanRoom.name, path: '/' });
 const millimanTypes = ['Reserve Studies', 'Pricing Analysis', 'Experience Studies', 'LDTI Valuations', 'Audit Support'];
 for (const type of millimanTypes) {
   const typeId = `milliman-${type.toLowerCase().replace(/ /g, '-')}`;
@@ -248,7 +251,8 @@ for (const type of millimanTypes) {
 
 // Internal folders
 const internalActuarialRoot = 'internal-actuarial-root';
-folders.push({ id: internalActuarialRoot, dataRoomId: 'internal-actuarial', parentId: null, name: 'Root', path: '/' });
+const internalActuarialRoom = dataRooms.find((r) => r.id === 'internal-actuarial')!;
+folders.push({ id: internalActuarialRoot, dataRoomId: 'internal-actuarial', parentId: null, name: internalActuarialRoom.name, path: '/' });
 const actuarialTypes = ['Reserving', 'Pricing', 'Capital Modeling', 'Experience Analysis'];
 for (const type of actuarialTypes) {
   const typeId = `internal-actuarial-${type.toLowerCase().replace(/ /g, '-')}`;
@@ -256,7 +260,8 @@ for (const type of actuarialTypes) {
 }
 
 const internalFinanceRoot = 'internal-finance-root';
-folders.push({ id: internalFinanceRoot, dataRoomId: 'internal-finance', parentId: null, name: 'Root', path: '/' });
+const internalFinanceRoom = dataRooms.find((r) => r.id === 'internal-finance')!;
+folders.push({ id: internalFinanceRoot, dataRoomId: 'internal-finance', parentId: null, name: internalFinanceRoom.name, path: '/' });
 const financeTypes = ['Statutory Filings', 'GAAP Reports', 'Tax Returns', 'Audit Materials', 'Board Materials'];
 for (const type of financeTypes) {
   const typeId = `internal-finance-${type.toLowerCase().replace(/ /g, '-')}`;
