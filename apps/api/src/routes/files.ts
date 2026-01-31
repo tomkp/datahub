@@ -7,6 +7,15 @@ import { FileStorage } from '../services/storage';
 import { getUser } from '../middleware/auth';
 import { CascadeDeletionService } from '../services/cascade-deletion';
 
+function validatePipelineForDataRoom(
+  db: AppDatabase,
+  pipelineId: string,
+  dataRoomId: string
+): boolean {
+  const pipeline = db.select().from(pipelines).where(eq(pipelines.id, pipelineId)).get();
+  return pipeline !== undefined && pipeline.dataRoomId === dataRoomId;
+}
+
 function triggerPipelineRun(
   db: AppDatabase,
   pipelineId: string,
@@ -128,11 +137,8 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
     }
 
     // Validate pipeline belongs to same data room (if provided)
-    if (pipelineId) {
-      const pipeline = db.select().from(pipelines).where(eq(pipelines.id, pipelineId)).get();
-      if (!pipeline || pipeline.dataRoomId !== folder.dataRoomId) {
-        return c.json({ error: 'Invalid pipeline for this data room' }, 400);
-      }
+    if (pipelineId && !validatePipelineForDataRoom(db, pipelineId, folder.dataRoomId)) {
+      return c.json({ error: 'Invalid pipeline for this data room' }, 400);
     }
 
     const fileId = crypto.randomUUID();
@@ -220,11 +226,8 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
     }
 
     // Validate pipeline belongs to same data room (if provided)
-    if (pipelineId) {
-      const pipeline = db.select().from(pipelines).where(eq(pipelines.id, pipelineId)).get();
-      if (!pipeline || pipeline.dataRoomId !== file.dataRoomId) {
-        return c.json({ error: 'Invalid pipeline for this data room' }, 400);
-      }
+    if (pipelineId && !validatePipelineForDataRoom(db, pipelineId, file.dataRoomId)) {
+      return c.json({ error: 'Invalid pipeline for this data room' }, 400);
     }
 
     const versionId = crypto.randomUUID();

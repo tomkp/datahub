@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, FileText } from 'lucide-react';
 import { Button } from './ui/Button';
 import { PipelineSelector } from './PipelineSelector';
@@ -21,6 +21,16 @@ export function UploadConfirmDialog({
 }: UploadConfirmDialogProps) {
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel]);
+
   const handleConfirm = () => {
     onConfirm(selectedPipelineId);
   };
@@ -34,7 +44,12 @@ export function UploadConfirmDialog({
         onClick={onCancel}
         aria-hidden="true"
       />
-      <div className="relative bg-background border border-border rounded-lg shadow-lg w-full max-w-md mx-4 p-6">
+      <div
+        role="dialog"
+        aria-label="Upload confirmation"
+        aria-modal="true"
+        className="relative bg-background border border-border rounded-lg shadow-lg w-full max-w-md mx-4 p-6"
+      >
         <button
           onClick={onCancel}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"

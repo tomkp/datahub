@@ -28,11 +28,15 @@ export function PipelineSelector({
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+      <label
+        htmlFor="pipeline-selector"
+        className="flex items-center gap-2 text-sm font-medium text-foreground"
+      >
         <GitBranch className="h-4 w-4" />
         Processing Pipeline {required && <span className="text-red-500">*</span>}
       </label>
       <select
+        id="pipeline-selector"
         value={selectedPipelineId || ''}
         onChange={(e) => onSelect(e.target.value || null)}
         disabled={disabled}
