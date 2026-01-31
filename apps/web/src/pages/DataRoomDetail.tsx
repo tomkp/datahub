@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ChevronRight, FolderPlus } from 'lucide-react';
+import { useQueryState, parseAsBoolean } from 'nuqs';
 import { useDataRoom } from '../hooks/useDataRooms';
 import { useCreateFolder } from '../hooks/useFolders';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -18,7 +19,7 @@ export function DataRoomDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: dataRoom, isLoading, isError, error, refetch } = useDataRoom(id!);
-  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [showCreateFolder, setShowCreateFolder] = useQueryState('createFolder', parseAsBoolean.withDefault(false));
   const [folderName, setFolderName] = useState('');
   const { success: showSuccess, error: showError } = useToast();
 
