@@ -38,7 +38,10 @@ export function UploadConfirmDialog({
   const canConfirm = !requirePipeline || selectedPipelineId !== null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div
         className="fixed inset-0 bg-black/50"
         onClick={onCancel}
