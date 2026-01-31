@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>{children}</BrowserRouter>
+  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>{children}</BrowserRouter>
 );
 
 describe('PageHeader', () => {
