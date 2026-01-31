@@ -102,12 +102,14 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
 
     const runByVersionId = new Map(runs.map((r) => [r.fileVersionId, r]));
 
-    // Get pipeline names for versions that have a pipelineId
-    const pipelineIds = Array.from(latestVersionByFile.values())
+    // Get pipeline names from both file versions and pipeline runs
+    const pipelineIdsFromVersions = Array.from(latestVersionByFile.values())
       .map((v) => v.pipelineId)
       .filter((id): id is string => id !== null);
-    const pipelineList = pipelineIds.length > 0
-      ? db.select().from(pipelines).where(inArray(pipelines.id, pipelineIds)).all()
+    const pipelineIdsFromRuns = runs.map((r) => r.pipelineId);
+    const allPipelineIds = [...new Set([...pipelineIdsFromVersions, ...pipelineIdsFromRuns])];
+    const pipelineList = allPipelineIds.length > 0
+      ? db.select().from(pipelines).where(inArray(pipelines.id, allPipelineIds)).all()
       : [];
     const pipelineById = new Map(pipelineList.map((p) => [p.id, p]));
 
@@ -115,7 +117,9 @@ export function filesRoutes(db: AppDatabase, storage: FileStorage) {
     const result = fileList.map((file) => {
       const latestVersion = latestVersionByFile.get(file.id);
       const pipelineRun = latestVersion ? runByVersionId.get(latestVersion.id) : undefined;
-      const pipeline = latestVersion?.pipelineId ? pipelineById.get(latestVersion.pipelineId) : undefined;
+      // Get pipeline from run first (for legacy files), then from version
+      const pipelineId = pipelineRun?.pipelineId || latestVersion?.pipelineId;
+      const pipeline = pipelineId ? pipelineById.get(pipelineId) : undefined;
       return {
         ...file,
         latestVersion,
