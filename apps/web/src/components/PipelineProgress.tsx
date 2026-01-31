@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, AlertCircle, Check, Loader2, Circle } from 'lucide-react';
 import { cn } from '../lib/utils';
-
-type StepStatus = 'pending' | 'processing' | 'processed' | 'errored' | 'warned';
+import type { ExtendedPipelineRunStepStatus } from '../lib/api';
 
 interface PipelineStep {
   step: string;
-  status: StepStatus;
+  status: ExtendedPipelineRunStepStatus;
   startedAt?: string;
   completedAt?: string;
   errorMessage?: string;
@@ -25,6 +24,8 @@ const STEP_LABELS: Record<string, string> = {
   data_validation: 'Data Validation',
   ingestion: 'Ingestion',
   control_checks: 'Control Checks',
+  alert_routing: 'Alert Routing',
+  reconciliation: 'Reconciliation',
 };
 
 function formatStepName(step: string): string {
@@ -41,7 +42,7 @@ function formatDuration(startedAt: string, completedAt: string): string {
   return `${Math.round(diffMs / 60000)}m`;
 }
 
-function StepIcon({ status }: { status: StepStatus }) {
+function StepIcon({ status }: { status: ExtendedPipelineRunStepStatus }) {
   const baseClasses = "h-4 w-4 flex items-center justify-center rounded-full";
 
   switch (status) {

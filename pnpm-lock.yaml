@@ -57,6 +57,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@datahub/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@tanstack/react-query':
         specifier: ^5.62.0
         version: 5.90.20(react@18.3.1)

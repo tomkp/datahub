@@ -1,11 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Building2, ChevronDown, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
-
-interface Tenant {
-  id: string;
-  name: string;
-}
+import type { Tenant } from '../lib/api';
 
 interface TenantSelectorProps {
   tenants: Tenant[];
