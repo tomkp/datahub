@@ -131,6 +131,11 @@ function PipelineCard({ pipeline, runs, dataRoomId, maxRuns = RUNS_PER_PIPELINE 
                   <span className="text-xs text-foreground truncate flex-1" title={run.fileName}>
                     {run.fileName || run.fileVersionId?.slice(0, 8) + '...'}
                   </span>
+                  {run.versionNumber && (run.versionCount ?? 0) > 1 && (
+                    <span className="text-[10px] px-1 py-0.5 rounded bg-surface-2 text-muted-foreground shrink-0">
+                      v{run.versionNumber}
+                    </span>
+                  )}
                   <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                     {formatRelativeTime(run.createdAt)}
                   </span>

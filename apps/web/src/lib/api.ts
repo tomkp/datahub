@@ -101,6 +101,8 @@ export interface PipelineRun {
   folderId?: string;
   folderName?: string;
   pipelineName?: string;
+  versionNumber?: number;
+  versionCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

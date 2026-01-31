@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { eq, desc, inArray } from 'drizzle-orm';
+import { eq, desc, asc, inArray } from 'drizzle-orm';
 import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { dataRooms, pipelines, pipelineRuns, fileVersions, files, folders } from '../db/schema';
@@ -162,18 +162,31 @@ export function dataRoomsRoutes(db: AppDatabase) {
       .limit(limit)
       .all();
 
-    // Enrich runs with file and folder information
+    // Enrich runs with file, folder, and version information
     const enrichedRuns = runs.map((run) => {
       const version = db.select().from(fileVersions).where(eq(fileVersions.id, run.fileVersionId)).get();
       if (version) {
         const file = db.select().from(files).where(eq(files.id, version.fileId)).get();
         const folder = file ? db.select().from(folders).where(eq(folders.id, file.folderId)).get() : null;
+
+        // Get all versions for this file to calculate version number
+        const allVersions = db
+          .select()
+          .from(fileVersions)
+          .where(eq(fileVersions.fileId, version.fileId))
+          .orderBy(asc(fileVersions.uploadedAt))
+          .all();
+        const versionIndex = allVersions.findIndex((v) => v.id === version.id);
+        const versionNumber = versionIndex >= 0 ? versionIndex + 1 : 1;
+
         return {
           ...run,
           fileId: file?.id,
           fileName: file?.name,
           folderId: folder?.id,
           folderName: folder?.name,
+          versionNumber,
+          versionCount: allVersions.length,
         };
       }
       return run;
