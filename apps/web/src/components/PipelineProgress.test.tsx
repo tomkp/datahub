@@ -36,16 +36,18 @@ describe('PipelineProgress', () => {
     expect(screen.getByText(/data validation/i)).toBeInTheDocument();
   });
 
-  it('shows status badge for each step', () => {
+  it('shows visual status indicators for each step', () => {
     render(<PipelineProgress steps={mockSteps} />);
-    expect(screen.getByText('Processed')).toBeInTheDocument();
-    expect(screen.getByText('Processing')).toBeInTheDocument();
-    expect(screen.getByText('Pending')).toBeInTheDocument();
+    // Verify data-status attributes are set correctly
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveAttribute('data-status', 'processed');
+    expect(items[1]).toHaveAttribute('data-status', 'processing');
+    expect(items[2]).toHaveAttribute('data-status', 'pending');
   });
 
-  it('displays timestamps when available', () => {
+  it('shows running indicator for processing steps', () => {
     render(<PipelineProgress steps={mockSteps} />);
-    expect(screen.getAllByText(/started/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('Running...')).toBeInTheDocument();
   });
 
   it('shows error message for failed steps', () => {
