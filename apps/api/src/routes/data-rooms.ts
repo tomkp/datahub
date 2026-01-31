@@ -62,6 +62,18 @@ export function dataRoomsRoutes(db: AppDatabase) {
 
     db.insert(dataRooms).values(dataRoom).run();
 
+    // Create root folder with the same name as the data room
+    const rootFolder = {
+      id: `${id}-root`,
+      dataRoomId: id,
+      parentId: null,
+      name: parsed.data.name,
+      path: '/',
+      createdAt: now,
+      updatedAt: now,
+    };
+    db.insert(folders).values(rootFolder).run();
+
     return c.json(dataRoom, 201);
   });
 
@@ -99,6 +111,14 @@ export function dataRoomsRoutes(db: AppDatabase) {
     };
 
     db.update(dataRooms).set(updated).where(eq(dataRooms.id, id)).run();
+
+    // If name changed, update root folder name to match
+    if (parsed.data.name) {
+      db.update(folders)
+        .set({ name: parsed.data.name, updatedAt: new Date().toISOString() })
+        .where(eq(folders.id, `${id}-root`))
+        .run();
+    }
 
     return c.json(updated);
   });

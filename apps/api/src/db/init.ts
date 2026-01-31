@@ -161,10 +161,10 @@ for (const room of dataRooms) {
     VALUES ('${room.id}', 'default', '${room.name}', '/storage/${room.id}', '${room.description}', '${now}', '${now}')
   `);
 
-  // Create a root folder for each data room
+  // Create a root folder for each data room (named after the data room)
   db.run(`
     INSERT OR IGNORE INTO folders (id, data_room_id, name, path, created_at, updated_at)
-    VALUES ('${room.id}-root', '${room.id}', 'Root', '/', '${now}', '${now}')
+    VALUES ('${room.id}-root', '${room.id}', '${room.name}', '/', '${now}', '${now}')
   `);
 }
 
