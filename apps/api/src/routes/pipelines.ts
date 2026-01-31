@@ -118,7 +118,7 @@ export function pipelinesRoutes(db: AppDatabase) {
     return c.json(enrichedRuns);
   });
 
-  // Get pipeline run by file version ID (with steps)
+  // Get pipeline run by file version ID (with steps and pipeline name)
   app.get('/file-versions/:versionId/pipeline-run', (c) => {
     const versionId = c.req.param('versionId');
     const run = db.select().from(pipelineRuns).where(eq(pipelineRuns.fileVersionId, versionId)).get();
@@ -128,8 +128,9 @@ export function pipelinesRoutes(db: AppDatabase) {
     }
 
     const steps = db.select().from(pipelineRunSteps).where(eq(pipelineRunSteps.pipelineRunId, run.id)).all();
+    const pipeline = db.select().from(pipelines).where(eq(pipelines.id, run.pipelineId)).get();
 
-    return c.json({ ...run, runSteps: steps });
+    return c.json({ ...run, runSteps: steps, pipelineName: pipeline?.name });
   });
 
   // Get pipeline run by ID (with steps)

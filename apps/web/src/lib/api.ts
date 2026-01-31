@@ -100,6 +100,7 @@ export interface PipelineRun {
   fileName?: string;
   folderId?: string;
   folderName?: string;
+  pipelineName?: string;
   createdAt?: string;
   updatedAt?: string;
 }

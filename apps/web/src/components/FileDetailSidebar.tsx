@@ -188,7 +188,12 @@ export function FileDetailSidebar({ fileId, onClose }: FileDetailSidebarProps) {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
                 <GitBranch className="h-4 w-4 text-muted-foreground" />
-                <h3 className="text-sm font-medium text-foreground">Pipeline Status</h3>
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Pipeline Status</h3>
+                  {pipelineRun?.pipelineName && (
+                    <p className="text-xs text-muted-foreground">{pipelineRun.pipelineName}</p>
+                  )}
+                </div>
               </div>
               {pipelineRun && (
                 <StatusBadge status={pipelineRun.status} />
