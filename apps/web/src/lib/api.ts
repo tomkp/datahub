@@ -1,4 +1,16 @@
 import { createContext, useContext } from 'react';
+import type {
+  PipelineRunStatus,
+  PipelineRunStepStatus,
+  DatasetKind,
+  PipelineStep,
+} from '@datahub/shared';
+
+// Re-export shared types for convenience
+export type { PipelineRunStatus, PipelineRunStepStatus, DatasetKind, PipelineStep };
+
+// API response types - these have optional timestamps and may include
+// additional computed/joined fields not in the base schema
 
 export interface Tenant {
   id: string;
@@ -22,7 +34,7 @@ export interface DataRoom {
 export interface Folder {
   id: string;
   dataRoomId: string;
-  parentId?: string;
+  parentId?: string | null;
   name: string;
   path: string;
   createdAt?: string;
@@ -49,24 +61,27 @@ export interface File {
   versions?: FileVersion[];
   latestVersion?: FileVersion;
   versionCount?: number;
-  pipelineStatus?: 'processing' | 'processed' | 'errored';
+  pipelineStatus?: PipelineRunStatus;
 }
 
 export interface Pipeline {
   id: string;
   dataRoomId: string;
   name: string;
-  steps: string[];
-  datasetKind?: string;
+  steps: PipelineStep[];
+  datasetKind?: DatasetKind;
   createdAt?: string;
   updatedAt?: string;
 }
+
+// Extended status type that includes 'pending' used by the frontend
+export type ExtendedPipelineRunStepStatus = PipelineRunStepStatus | 'pending';
 
 export interface PipelineRunStep {
   id: string;
   pipelineRunId: string;
   step: string;
-  status: 'pending' | 'processing' | 'processed' | 'errored' | 'warned';
+  status: ExtendedPipelineRunStepStatus;
   errorMessage?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -76,8 +91,8 @@ export interface PipelineRun {
   id: string;
   pipelineId: string;
   fileVersionId: string;
-  status: 'processing' | 'processed' | 'errored';
-  steps?: string[];
+  status: PipelineRunStatus;
+  steps?: PipelineStep[];
   runSteps?: PipelineRunStep[];
   fileId?: string;
   fileName?: string;
