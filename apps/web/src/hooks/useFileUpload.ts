@@ -79,7 +79,7 @@ export function useFileUpload(folderId: string) {
             reject(new Error('Upload cancelled'));
           });
 
-          xhr.open('POST', `${api.baseUrl}/folders/${folderId}/files`);
+          xhr.open('POST', `${api.baseUrl}/api/folders/${folderId}/files`);
           xhr.setRequestHeader('Authorization', `Bearer ${api.token}`);
           xhr.send(formData);
         });
