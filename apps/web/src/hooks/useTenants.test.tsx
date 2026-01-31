@@ -21,6 +21,7 @@ const createMockApi = (): ApiClient => ({
     update: vi.fn(),
     delete: vi.fn(),
     getFolders: vi.fn(),
+      getPipelineRuns: vi.fn(),
   },
   folders: {
     get: vi.fn(),

@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GitBranch, ChevronRight, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useDataRooms } from '../hooks/useDataRooms';
-import { usePipelines, usePipelineRuns } from '../hooks/usePipelines';
+import { usePipelines, useDataRoomPipelineRuns } from '../hooks/usePipelines';
 import { QueryError } from '../components/ui';
 import { StatusBadge } from '../components';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import type { Pipeline, PipelineRun, DataRoom } from '../lib/api';
+
+const DEFAULT_RUNS_LIMIT = 10;
 
 function formatDate(dateString?: string) {
   if (!dateString) return '-';
@@ -33,100 +35,81 @@ function PipelineStatusIcon({ status }: { status: PipelineRun['status'] }) {
   }
 }
 
-function PipelineCard({ pipeline, dataRoom }: { pipeline: Pipeline; dataRoom: DataRoom }) {
-  const { data: runs } = usePipelineRuns(pipeline.id);
-  const recentRuns = runs?.slice(0, 5) || [];
-
+function PipelineCard({ pipeline }: { pipeline: Pipeline }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="font-medium text-foreground">{pipeline.datasetKind || 'Pipeline'}</h3>
-          <Link
-            to={`/data-rooms/${dataRoom.id}`}
-            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-          >
-            {dataRoom.name}
-            <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <GitBranch className="h-4 w-4" />
+    <div className="rounded-lg border border-border bg-card p-3">
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="font-medium text-foreground text-sm">{pipeline.datasetKind || 'Pipeline'}</h3>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <GitBranch className="h-3 w-3" />
           {pipeline.steps?.length || 0} steps
         </div>
       </div>
 
       {/* Pipeline steps */}
-      <div className="flex flex-wrap gap-1 mb-4">
+      <div className="flex flex-wrap gap-1">
         {pipeline.steps?.map((step) => (
           <span
             key={step}
-            className="text-xs px-2 py-0.5 rounded bg-surface-2 text-muted-foreground"
+            className="text-xs px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground"
           >
             {step.replace(/_/g, ' ')}
           </span>
         ))}
       </div>
-
-      {/* Recent runs */}
-      {recentRuns.length > 0 ? (
-        <div className="border-t border-border pt-3">
-          <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">
-            Recent Runs
-          </h4>
-          <div className="space-y-2">
-            {recentRuns.map((run) => {
-              const linkTo = run.folderId && run.fileId
-                ? `/data-rooms/${dataRoom.id}?folder=${run.folderId}&file=${run.fileId}`
-                : '#';
-              return (
-              <Link
-                key={run.id}
-                to={linkTo}
-                className="flex items-center justify-between text-sm hover:bg-muted/50 rounded px-2 py-1 -mx-2 transition-colors duration-150"
-              >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <PipelineStatusIcon status={run.status} />
-                  <span
-                    className="text-muted-foreground truncate"
-                    title={run.folderName && run.fileName ? `${run.folderName} / ${run.fileName}` : run.fileName || run.fileVersionId}
-                  >
-                    {run.folderName && run.fileName
-                      ? `${run.folderName} / ${run.fileName}`
-                      : run.fileName || run.fileVersionId?.slice(0, 8) + '...'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <StatusBadge status={run.status} size="sm" />
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatDate(run.createdAt)}
-                  </span>
-                </div>
-              </Link>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="border-t border-border pt-3">
-          <p className="text-sm text-muted-foreground">No runs yet</p>
-        </div>
-      )}
     </div>
   );
 }
 
-function DataRoomPipelines({ dataRoom }: { dataRoom: DataRoom }) {
-  const { data: pipelines, isLoading, isError } = usePipelines(dataRoom.id);
+function RecentRunsList({ runs, dataRoomId }: { runs: PipelineRun[]; dataRoomId: string }) {
+  if (runs.length === 0) {
+    return <p className="text-sm text-muted-foreground">No runs yet</p>;
+  }
 
-  if (isLoading) {
+  return (
+    <div className="space-y-1">
+      {runs.map((run) => {
+        const linkTo = run.folderId && run.fileId
+          ? `/data-rooms/${dataRoomId}?folder=${run.folderId}&file=${run.fileId}`
+          : '#';
+        return (
+          <Link
+            key={run.id}
+            to={linkTo}
+            className="flex items-center justify-between text-sm hover:bg-muted/50 rounded px-2 py-1.5 -mx-2 transition-colors duration-150"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <PipelineStatusIcon status={run.status} />
+              <span
+                className="text-muted-foreground truncate"
+                title={run.folderName && run.fileName ? `${run.folderName} / ${run.fileName}` : run.fileName || run.fileVersionId}
+              >
+                {run.folderName && run.fileName
+                  ? `${run.folderName} / ${run.fileName}`
+                  : run.fileName || run.fileVersionId?.slice(0, 8) + '...'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <StatusBadge status={run.status} size="sm" />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {formatDate(run.createdAt)}
+              </span>
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function DataRoomSection({ dataRoom, runsLimit }: { dataRoom: DataRoom; runsLimit: number }) {
+  const { data: pipelines, isLoading: pipelinesLoading } = usePipelines(dataRoom.id);
+  const { data: runs, isLoading: runsLoading } = useDataRoomPipelineRuns(dataRoom.id, runsLimit);
+
+  if (pipelinesLoading) {
     return (
       <div className="text-sm text-muted-foreground">Loading pipelines...</div>
     );
-  }
-
-  if (isError) {
-    return null;
   }
 
   if (!pipelines?.length) {
@@ -134,17 +117,52 @@ function DataRoomPipelines({ dataRoom }: { dataRoom: DataRoom }) {
   }
 
   return (
-    <>
-      {pipelines.map((pipeline) => (
-        <PipelineCard key={pipeline.id} pipeline={pipeline} dataRoom={dataRoom} />
-      ))}
-    </>
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
+      {/* Data Room Header */}
+      <div className="px-4 py-3 border-b border-border bg-surface">
+        <Link
+          to={`/data-rooms/${dataRoom.id}`}
+          className="font-medium text-foreground hover:text-primary flex items-center gap-1"
+        >
+          {dataRoom.name}
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+        {dataRoom.description && (
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{dataRoom.description}</p>
+        )}
+      </div>
+
+      {/* Pipelines */}
+      <div className="p-4 border-b border-border">
+        <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">
+          Pipelines ({pipelines.length})
+        </h4>
+        <div className="grid grid-cols-1 gap-2">
+          {pipelines.map((pipeline) => (
+            <PipelineCard key={pipeline.id} pipeline={pipeline} />
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Runs */}
+      <div className="p-4">
+        <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">
+          Recent Runs
+        </h4>
+        {runsLoading ? (
+          <div className="text-sm text-muted-foreground">Loading runs...</div>
+        ) : (
+          <RecentRunsList runs={runs || []} dataRoomId={dataRoom.id} />
+        )}
+      </div>
+    </div>
   );
 }
 
 export function Pipelines() {
   const { data: dataRooms, isLoading, isError, error, refetch } = useDataRooms();
   const [filter, setFilter] = useState<'all' | 'active' | 'failed'>('all');
+  const runsLimit = DEFAULT_RUNS_LIMIT;
 
   useDocumentTitle('Pipelines');
 
@@ -191,10 +209,10 @@ export function Pipelines() {
         </div>
       </div>
 
-      {/* Pipeline grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Data room sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {dataRooms?.map((dataRoom) => (
-          <DataRoomPipelines key={dataRoom.id} dataRoom={dataRoom} />
+          <DataRoomSection key={dataRoom.id} dataRoom={dataRoom} runsLimit={runsLimit} />
         ))}
       </div>
 
