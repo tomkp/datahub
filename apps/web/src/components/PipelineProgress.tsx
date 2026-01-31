@@ -97,7 +97,7 @@ function PipelineStepItem({ step, isLast }: { step: PipelineStep; isLast: boolea
             {formatStepName(step.step)}
           </span>
           {step.startedAt && step.completedAt && (
-            <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+            <span className="text-xs text-muted-foreground shrink-0">
               {formatDuration(step.startedAt, step.completedAt)}
             </span>
           )}
