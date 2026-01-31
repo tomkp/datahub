@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { nowISO } from '@datahub/shared';
 import type { AppDatabase } from '../db';
 import { pipelines, pipelineRuns, pipelineRunSteps } from '../db/schema';
@@ -136,21 +136,17 @@ export class PipelineProcessor {
     errorMessage?: string
   ): void {
     const now = nowISO();
-    const stepRecord = this.db.select()
-      .from(pipelineRunSteps)
-      .all()
-      .find((s) => s.pipelineRunId === runId && s.step === step);
-
-    if (stepRecord) {
-      this.db.update(pipelineRunSteps)
-        .set({
-          status,
-          errorMessage: errorMessage ?? null,
-          updatedAt: now,
-        })
-        .where(eq(pipelineRunSteps.id, stepRecord.id))
-        .run();
-    }
+    this.db.update(pipelineRunSteps)
+      .set({
+        status,
+        errorMessage: errorMessage ?? null,
+        updatedAt: now,
+      })
+      .where(and(
+        eq(pipelineRunSteps.pipelineRunId, runId),
+        eq(pipelineRunSteps.step, step)
+      ))
+      .run();
   }
 
   async retryPipelineRun(runId: string): Promise<void> {
@@ -194,8 +190,8 @@ export class PipelineProcessor {
 
     const steps = this.db.select()
       .from(pipelineRunSteps)
-      .all()
-      .filter((s) => s.pipelineRunId === runId);
+      .where(eq(pipelineRunSteps.pipelineRunId, runId))
+      .all();
 
     return { ...run, steps };
   }
