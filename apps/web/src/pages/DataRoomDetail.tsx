@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, FolderPlus, GitBranch, PanelLeft, X } from 'lucide-react';
+import { ChevronRight, FolderPlus, GitBranch, PanelLeft } from 'lucide-react';
 import { useQueryState, parseAsBoolean, parseAsString, parseAsArrayOf, parseAsStringLiteral } from 'nuqs';
 import { useDataRoom } from '../hooks/useDataRooms';
 import { useCreateFolder } from '../hooks/useFolders';
