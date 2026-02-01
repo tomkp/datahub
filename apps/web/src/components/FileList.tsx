@@ -214,7 +214,8 @@ export function FileList({ folderId, filters, onClearFilters, selectedFileId, on
 
   return (
     <div data-testid="file-list" className="border border-border rounded overflow-hidden">
-      <table className="w-full text-sm">
+      <div data-testid="file-list-scroll-container" className="overflow-x-auto">
+        <table className="min-w-full text-sm">
         <thead>
           <tr className="bg-surface-1 border-b border-border">
             <SortableHeader column="name" label="Name" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} />
@@ -275,6 +276,7 @@ export function FileList({ folderId, filters, onClearFilters, selectedFileId, on
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
