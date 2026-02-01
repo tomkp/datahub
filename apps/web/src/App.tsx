@@ -29,14 +29,17 @@ function NavItem({
   to,
   icon: Icon,
   children,
+  onClick,
 }: {
   to: string;
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
+  onClick?: () => void;
 }) {
   return (
     <NavLink
       to={to}
+      onClick={onClick}
       className={({ isActive }) =>
         cn(
           'flex items-center gap-2 px-2 py-1.5 rounded text-[13px] font-medium transition-colors duration-75',
@@ -105,20 +108,20 @@ function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Navigation - Tighter spacing */}
         <nav aria-label="Main navigation" className="flex-1 p-2 space-y-0.5">
-          <NavItem to="/" icon={LayoutDashboard}>
+          <NavItem to="/" icon={LayoutDashboard} onClick={() => setSidebarOpen(false)}>
             Dashboard
           </NavItem>
-          <NavItem to="/data-rooms" icon={Database}>
+          <NavItem to="/data-rooms" icon={Database} onClick={() => setSidebarOpen(false)}>
             Data Rooms
           </NavItem>
-          <NavItem to="/pipelines" icon={GitBranch}>
+          <NavItem to="/pipelines" icon={GitBranch} onClick={() => setSidebarOpen(false)}>
             Pipelines
           </NavItem>
         </nav>
 
         {/* Footer section */}
         <div className="p-2 border-t border-border space-y-0.5">
-          <NavItem to="/settings" icon={Settings}>
+          <NavItem to="/settings" icon={Settings} onClick={() => setSidebarOpen(false)}>
             Settings
           </NavItem>
           <ThemeToggle />

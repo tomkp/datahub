@@ -122,5 +122,28 @@ describe('App', () => {
 
       expect(hamburger).toHaveClass('lg:hidden');
     });
+
+    it('closes sidebar when a navigation link is clicked', async () => {
+      render(<App />);
+
+      const hamburger = screen.getByRole('button', { name: /toggle navigation/i });
+
+      // Open sidebar
+      fireEvent.click(hamburger);
+      const sidebar = screen.getByRole('complementary');
+
+      await waitFor(() => {
+        expect(sidebar).toHaveClass('translate-x-0');
+      });
+
+      // Click a navigation link (use getAllByRole since there are multiple)
+      const dataRoomsLinks = screen.getAllByRole('link', { name: /data rooms/i });
+      fireEvent.click(dataRoomsLinks[0]);
+
+      // Sidebar should close
+      await waitFor(() => {
+        expect(sidebar).toHaveClass('-translate-x-full');
+      });
+    });
   });
 });
