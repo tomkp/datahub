@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsAdapter } from 'nuqs/adapters/react-router/v6';
-import { Database, LayoutDashboard, GitBranch, Settings } from 'lucide-react';
+import { Database, LayoutDashboard, GitBranch, Settings, Menu, X } from 'lucide-react';
 import { ApiContext, createApiClient } from './lib/api';
 import { Dashboard, DataRooms, DataRoomDetail, FileDetail, Pipelines } from './pages';
 import { cn } from './lib/utils';
@@ -52,10 +53,44 @@ function NavItem({
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="flex h-screen bg-background text-foreground">
+      {/* Hamburger menu button - visible on mobile, hidden on desktop */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle navigation"
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-surface-1 border border-border hover:bg-surface-2 transition-colors"
+      >
+        {sidebarOpen ? (
+          <X className="h-5 w-5 text-foreground" />
+        ) : (
+          <Menu className="h-5 w-5 text-foreground" />
+        )}
+      </button>
+
+      {/* Backdrop - only visible on mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          data-testid="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+        />
+      )}
+
       {/* Sidebar - Compact, Linear-style */}
-      <aside className="w-52 border-r border-border bg-surface-1 flex flex-col">
+      <aside
+        role="complementary"
+        className={cn(
+          'w-52 border-r border-border bg-surface-1 flex flex-col',
+          'fixed lg:static inset-y-0 left-0 z-40',
+          'transition-transform duration-200 ease-in-out',
+          'lg:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'hidden lg:block'
+        )}
+      >
         {/* Logo area - minimal padding */}
         <div className="px-3 py-2.5 border-b border-border">
           <div className="flex items-center gap-2">
@@ -90,9 +125,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content - Reduced padding */}
+      {/* Main content - Reduced padding, add left padding on mobile for hamburger */}
       <main className="flex-1 overflow-hidden bg-background">
-        <div className="h-full overflow-y-auto p-4">{children}</div>
+        <div className="h-full overflow-y-auto p-4 lg:p-4 pt-16 lg:pt-4">{children}</div>
       </main>
     </div>
   );
