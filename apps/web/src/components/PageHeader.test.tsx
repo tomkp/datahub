@@ -62,4 +62,44 @@ describe('PageHeader', () => {
     );
     expect(screen.getByTestId('action-btn')).toBeInTheDocument();
   });
+
+  describe('Responsive button wrapping', () => {
+    it('actions container has flex-wrap class', () => {
+      const { container } = render(
+        <PageHeader
+          title="Title"
+          actions={
+            <>
+              <button>Action 1</button>
+              <button>Action 2</button>
+              <button>Action 3</button>
+            </>
+          }
+        />,
+        { wrapper }
+      );
+
+      const actionsContainer = container.querySelector('.flex-wrap');
+      expect(actionsContainer).toBeInTheDocument();
+    });
+
+    it('actions container has appropriate gap spacing', () => {
+      const { container } = render(
+        <PageHeader
+          title="Title"
+          actions={
+            <>
+              <button>Action 1</button>
+              <button>Action 2</button>
+            </>
+          }
+        />,
+        { wrapper }
+      );
+
+      const actionsContainer = container.querySelector('[class*="gap-"]');
+      expect(actionsContainer).toBeInTheDocument();
+      expect(actionsContainer).toHaveClass('gap-2');
+    });
+  });
 });
