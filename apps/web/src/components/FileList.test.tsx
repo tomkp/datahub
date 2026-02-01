@@ -150,4 +150,41 @@ describe('FileList', () => {
 
     expect(await screen.findByText('Status')).toBeInTheDocument();
   });
+
+  describe('Responsive Layout', () => {
+    it('wraps table in scrollable container on mobile', async () => {
+      const api = createMockApi({
+        folders: {
+          getFiles: vi.fn().mockResolvedValue([
+            { id: 'file1', name: 'report.pdf', folderId: 'f1', dataRoomId: 'r1' },
+          ]),
+        },
+      });
+
+      render(<FileList folderId="f1" />, { wrapper: createTestWrapper(api, { useBrowserRouter: true }) });
+
+      const container = await screen.findByTestId('file-list');
+      const scrollContainer = container.querySelector('[data-testid="file-list-scroll-container"]');
+
+      expect(scrollContainer).toBeInTheDocument();
+      expect(scrollContainer).toHaveClass('overflow-x-auto');
+    });
+
+    it('table has minimum width to prevent column squashing', async () => {
+      const api = createMockApi({
+        folders: {
+          getFiles: vi.fn().mockResolvedValue([
+            { id: 'file1', name: 'report.pdf', folderId: 'f1', dataRoomId: 'r1' },
+          ]),
+        },
+      });
+
+      render(<FileList folderId="f1" />, { wrapper: createTestWrapper(api, { useBrowserRouter: true }) });
+
+      const table = await screen.findByRole('table');
+
+      // Should have min-width class
+      expect(table).toHaveClass('min-w-full');
+    });
+  });
 });
